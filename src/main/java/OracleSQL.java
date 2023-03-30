@@ -93,6 +93,12 @@ public class OracleSQL {
         return this;
     }
 
+    public void printStatements(){
+        for (String statements : this.statementCommands){
+            System.out.println(statements);
+        }
+    }
+
     public OracleSQL estalishConnection() {
         try {
             DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
@@ -124,8 +130,15 @@ public class OracleSQL {
         }
 
         s.append(")");
-        System.out.println(s);
         statementCommands.add(s.toString());
+        return this;
+    }
+
+    public OracleSQL createTable(String table, String[] columns, String[] dataTypes, boolean dropTable){
+        if (dropTable) {
+            if (this.tables.contains(table)) statementCommands.add("DROP TABLE " + table);
+        }
+        createTable(table, columns, dataTypes);
         return this;
     }
 

@@ -18,6 +18,8 @@ public class Main {
         String[] dataTypes = {"VARCHAR(20)", "VARCHAR(20)", "NUMBER"};
 
         oracleSQL.createTable(table, columns, dataTypes);
+        oracleSQL.createTable(table, columns, dataTypes, true);
+        oracleSQL.printStatements();
     }
 
 }
