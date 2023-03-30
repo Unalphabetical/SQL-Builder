@@ -142,4 +142,24 @@ public class OracleSQL {
         return this;
     }
 
+    public OracleSQL insert(String table, String[] values){
+        String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
+
+        StringBuilder s = new StringBuilder("INSERT INTO ").append(table).append(" VALUES (");
+        int index = 0;
+
+        for (String value : values) {
+            if (dataTypes[index].startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) s.append('\'');
+            s.append(value);
+            if (dataTypes[index].startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) s.append('\'');
+            if (index < values.length - 1) s.append(", ");
+
+            index++;
+        }
+        s.append(")");
+
+        statementCommands.add(s.toString());
+        return this;
+    }
+
 }

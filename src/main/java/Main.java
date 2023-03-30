@@ -19,6 +19,9 @@ public class Main {
 
         oracleSQL.createTable(table, columns, dataTypes);
         oracleSQL.createTable(table, columns, dataTypes, true);
+
+        String[] values = {"25000", "Test", "25000"};
+        oracleSQL.insert(table, values);
         oracleSQL.printStatements();
     }
 
