@@ -1,5 +1,12 @@
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
+
 public class OracleSQL {
 
+    private Connection SQLConnection;
+    private Statement statement;
     private String host;
     private String port;
     private String serviceType;
@@ -65,6 +72,18 @@ public class OracleSQL {
 
     public OracleSQL setPassword(String password) {
         this.password = password;
+        return this;
+    }
+
+    public OracleSQL estalishConnection() {
+        try {
+            DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
+            this.SQLConnection = DriverManager.getConnection(
+                    "jdbc:oracle:thin:@" + host + ":" + port + ":" + serviceType, username, password);
+            this.statement = SQLConnection.createStatement();
+        } catch (SQLException s) {
+            throw new RuntimeException(s);
+        }
         return this;
     }
 

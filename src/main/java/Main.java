@@ -1,7 +1,10 @@
 public class Main {
 
     public static void main(String[] args) {
-        OracleSQL oracleSQL = new OracleSQL("192.168.1.1", "9999", "ORCL", "admin", "password");
+        OracleSQL oracleSQL = new OracleSQL("192.168.1.1", "9999", "ORCL")
+                .setUsername("admin")
+                .setPassword("password")
+                .estalishConnection();
 
         System.out.println("Host: " + oracleSQL.getHost());
         System.out.println("Port: " + oracleSQL.getPort());
