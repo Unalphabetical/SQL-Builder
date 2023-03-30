@@ -87,4 +87,19 @@ public class OracleSQL {
         return this;
     }
 
+    public OracleSQL createTable(String table, String[] columns, String[] dataTypes){
+        StringBuilder s = new StringBuilder("CREATE TABLE ").append(table).append(" (");
+        int index = 0;
+
+        for (String col : columns){
+            if (index < columns.length - 1) s.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]).append(", ");
+            else s.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
+            index++;
+        }
+
+        s.append(")");
+        System.out.println(s);
+        return this;
+    }
+
 }
