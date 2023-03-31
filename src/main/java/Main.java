@@ -13,7 +13,6 @@ public class Main {
         System.out.println("Password: " + oracleSQL.getPassword());
         System.out.println();
 
-
         String foreignTable = "ForeignTable";
         String[] foreignColumns = {"PartyId", "ClassroomId"};
         String[] foreignDataTypes = {"NUMBER", "NUMBER"};
@@ -24,7 +23,8 @@ public class Main {
         String[] dataTypes = {"VARCHAR(20)", "VARCHAR(20)", "NUMBER", "NUMBER"};
         String[] keys = {"NULL", "NULL", "Primary Key", "Foreign Key"};
 
-        oracleSQL.createTable(table, columns, dataTypes, true);
+        oracleSQL.dropTable(table);
+        oracleSQL.createTable(table, columns, dataTypes);
         oracleSQL.createTable(table, columns, dataTypes, keys, foreignTable);
 
         String[] values = {"John", "Doe", "519779675", "TO_DATE('1999/02/04','YYYY/MM/DD')"};

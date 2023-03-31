@@ -199,11 +199,8 @@ public class OracleSQL {
         return this;
     }
 
-    public OracleSQL createTable(String table, String[] columns, String[] dataTypes, boolean dropTable) {
-        if (dropTable) {
-            if (this.tables.contains(table)) statementCommands.add("DROP TABLE " + table + ";");
-        }
-        createTable(table, columns, dataTypes);
+    public OracleSQL dropTable(String table){
+        statementCommands.add("DROP TABLE " + table + ";");
         return this;
     }
 
