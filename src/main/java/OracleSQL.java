@@ -2,10 +2,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class OracleSQL {
 
@@ -121,22 +118,28 @@ public class OracleSQL {
         tablesInformation.put("table-" + table + "-dataTypes", dataTypes);
 
         StringBuilder s = new StringBuilder("CREATE TABLE ").append(table).append(" (");
+        int dateIndex = 0;
         int index = 0;
 
         for (String col : columns){
             if (index < columns.length - 1) s.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]).append(", ");
             else s.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
+
+            if (dataTypes[Utilities.findIndex(columns, col)].startsWith("DATE")) {
+                tablesInformation.put("table-" + table + "-dateformat-" + dateIndex, new String[] {"DD-MON-YY"});
+                dateIndex++;
+            }
             index++;
         }
 
-        s.append(")");
+        s.append(");");
         statementCommands.add(s.toString());
         return this;
     }
 
     public OracleSQL createTable(String table, String[] columns, String[] dataTypes, boolean dropTable){
         if (dropTable) {
-            if (this.tables.contains(table)) statementCommands.add("DROP TABLE " + table);
+            if (this.tables.contains(table)) statementCommands.add("DROP TABLE " + table + ";");
         }
         createTable(table, columns, dataTypes);
         return this;
@@ -146,17 +149,35 @@ public class OracleSQL {
         String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
 
         StringBuilder s = new StringBuilder("INSERT INTO ").append(table).append(" VALUES (");
+
         int index = 0;
+        int dateIndex = 0;
 
         for (String value : values) {
-            if (dataTypes[index].startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) s.append('\'');
-            s.append(value);
-            if (dataTypes[index].startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) s.append('\'');
+            if (dataTypes[index].startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) {
+                s.append("'");
+                s.append(value.replace("'", "''"));
+                s.append("'");
+            }
+            else {
+                s.append(value);
+            }
+
+            if (dataTypes[index].startsWith("DATE")) {
+                if (value.startsWith("TO_DATE")){
+                    String[] splitDate = value.replace("TO_DATE", "")
+                            .replace("(", "").replace(")", "")
+                            .split(",");
+                    tablesInformation.put("table-" + table + "-dateformat-" + dateIndex, new String[] {splitDate[1]});
+                }
+                dateIndex++;
+            }
+
             if (index < values.length - 1) s.append(", ");
 
             index++;
         }
-        s.append(")");
+        s.append(");");
 
         statementCommands.add(s.toString());
         return this;

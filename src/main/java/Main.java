@@ -14,14 +14,15 @@ public class Main {
         System.out.println();
 
         String table = "TestTable";
-        String[] columns = {"FirstName", "LastName", "SSN"};
-        String[] dataTypes = {"VARCHAR(20)", "VARCHAR(20)", "NUMBER"};
+        String[] columns = {"FirstName", "LastName", "SSN", "Birthday"};
+        String[] dataTypes = {"VARCHAR(20)", "VARCHAR(20)", "NUMBER", "DATE"};
 
         oracleSQL.createTable(table, columns, dataTypes);
         oracleSQL.createTable(table, columns, dataTypes, true);
 
-        String[] values = {"25000", "Test", "25000"};
+        String[] values = {"John", "Doe", "519779675", "TO_DATE('1999/02/04','YYYY/MM/DD')"};
         oracleSQL.insert(table, values);
+
         oracleSQL.printStatements();
     }
 
