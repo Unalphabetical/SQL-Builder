@@ -91,7 +91,7 @@ public class OracleSQL {
     }
 
     public void printStatements(){
-        for (String statements : this.statementCommands){
+        for (String statements : this.statementCommands) {
             System.out.println(statements);
         }
     }
@@ -108,7 +108,33 @@ public class OracleSQL {
         return this;
     }
 
-    public OracleSQL createTable(String table, String[] columns, String[] dataTypes){
+    public OracleSQL removeUnnecessaryStatements(){
+        if (statementCommands.size() <= 1) return this;
+        for (int i = 0; i < statementCommands.size(); i++){
+            if (i < statementCommands.size() - 1) {
+
+                String currentStatement = statementCommands.get(i);
+                String nextStatement = statementCommands.get(i + 1);
+                
+                if (currentStatement.toUpperCase(Locale.ROOT).startsWith("CREATE TABLE ")) {
+                    if (nextStatement.toUpperCase(Locale.ROOT).startsWith("CREATE TABLE ")) {
+
+                        String[] splitStatement = currentStatement.split("CREATE TABLE ");
+                        String tableRemove = splitStatement[1].replace(", ", "").split(" ")[0].trim();
+                        String nextTable = nextStatement.split("CREATE TABLE ")[1].replace(", ", "").split(" ")[0].trim();
+
+                        if (nextTable.equals(tableRemove)) {
+                            statementCommands.remove(statementCommands.get(i));
+                        }
+                    }
+                }
+            }
+        }
+
+        return this;
+    }
+
+    public OracleSQL createTable(String table, String[] columns, String[] dataTypes) {
         int tableIndex = tables.indexOf(table);
         if (tableIndex == -1) tableIndex = 0;
         if (tableIndex >= tables.size()) tables.add(table);
@@ -137,7 +163,7 @@ public class OracleSQL {
         return this;
     }
 
-    public OracleSQL createTable(String table, String[] columns, String[] dataTypes, String[] keys, String foreignTable){
+    public OracleSQL createTable(String table, String[] columns, String[] dataTypes, String[] keys, String foreignTable) {
         createTable(table, columns, dataTypes);
         StringBuilder oldString = new StringBuilder();
         StringBuilder newString = new StringBuilder();
@@ -161,7 +187,7 @@ public class OracleSQL {
             index++;
         }
 
-        for (String oldStatement : statementCommands){
+        for (String oldStatement : statementCommands) {
             int statementIndex = statementCommands.indexOf(oldStatement);
             if (oldStatement.contains(table) && oldStatement.contains(oldString)){
                 oldStatement = oldStatement.replace(oldString, newString);
@@ -173,7 +199,7 @@ public class OracleSQL {
         return this;
     }
 
-    public OracleSQL createTable(String table, String[] columns, String[] dataTypes, boolean dropTable){
+    public OracleSQL createTable(String table, String[] columns, String[] dataTypes, boolean dropTable) {
         if (dropTable) {
             if (this.tables.contains(table)) statementCommands.add("DROP TABLE " + table + ";");
         }
@@ -181,7 +207,7 @@ public class OracleSQL {
         return this;
     }
 
-    public OracleSQL insert(String table, String[] values){
+    public OracleSQL insert(String table, String[] values) {
         String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
 
         StringBuilder s = new StringBuilder("INSERT INTO ").append(table).append(" VALUES (");

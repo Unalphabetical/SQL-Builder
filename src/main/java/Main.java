@@ -30,6 +30,7 @@ public class Main {
         String[] values = {"John", "Doe", "519779675", "TO_DATE('1999/02/04','YYYY/MM/DD')"};
         oracleSQL.insert(table, values);
 
+        oracleSQL.removeUnnecessaryStatements();
         oracleSQL.printStatements();
     }
 
