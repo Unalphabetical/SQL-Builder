@@ -147,12 +147,13 @@ public class OracleSQL {
         int dateIndex = 0;
         int index = 0;
 
-        for (String col : columns){
-            if (index < columns.length - 1) s.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]).append(", ");
+        for (String col : columns) {
+            if (index < columns.length - 1)
+                s.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]).append(", ");
             else s.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
 
             if (dataTypes[Utilities.findIndex(columns, col)].startsWith("DATE")) {
-                tablesInformation.put("table-" + table + "-dateformat-" + dateIndex, new String[] {"DD-MON-YY"});
+                tablesInformation.put("table-" + table + "-dateformat-" + dateIndex, new String[]{"DD-MON-YY"});
                 dateIndex++;
             }
             index++;
@@ -163,8 +164,8 @@ public class OracleSQL {
         return this;
     }
 
-    public OracleSQL createTable(String table, String[] columns, String[] dataTypes, String[] keys, String foreignTable) {
-        createTable(table, columns, dataTypes);
+    public OracleSQL createTable(String table, String[] columns, String[] dataTypes, String[] keys, String[] references) {
+        if (!statementCommands.contains(table)) createTable(table, columns, dataTypes);
         StringBuilder oldString = new StringBuilder();
         StringBuilder newString = new StringBuilder();
         int index = 0;
@@ -174,11 +175,26 @@ public class OracleSQL {
             newString.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
 
             String key = keys[index];
-            if (key.toUpperCase(Locale.ROOT).startsWith("PRIMARY KEY")) newString.append(" PRIMARY KEY");
-            else if (key.toUpperCase(Locale.ROOT).startsWith("FOREIGN KEY")) newString.append(" ").append(table)
-                    .append("_").append(columns[index])
-                    .append("_").append(foreignTable)
-                    .append("_fk REFERENCES ").append(foreignTable);
+            if (key.equals("NULL") && references != null && references[index] != null) newString.append(" REFERENCES ")
+                    .append(references[index]).append(" (")
+                    .append(columns[index]).append(")");
+
+            if (key.toUpperCase(Locale.ROOT).equals("UNIQUE")){
+                newString.append(" ").append("CONSTRAINT ")
+                        .append(table).append("_")
+                        .append(columns[index]).append("_uk UNIQUE");
+            } else if (key.toUpperCase(Locale.ROOT).equals("PRIMARY KEY")) {
+                newString.append(" PRIMARY KEY");
+                if (references != null && references[index] != null) newString.append(" REFERENCES ")
+                        .append(references[index]).append(" (")
+                        .append(columns[index]).append(")");
+            } else if (key.toUpperCase(Locale.ROOT).equals("FOREIGN KEY")) {
+                if (references != null && references[index] != null) newString.append(" ").append("CONSTRAINT ")
+                        .append(table).append("_")
+                        .append(columns[index]).append("_")
+                        .append(references[index]).append("_fk REFERENCES ")
+                        .append(references[index]);
+            }
 
             if (index < columns.length - 1) {
                 oldString.append(", ");
