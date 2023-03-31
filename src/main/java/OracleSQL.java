@@ -137,6 +137,42 @@ public class OracleSQL {
         return this;
     }
 
+    public OracleSQL createTable(String table, String[] columns, String[] dataTypes, String[] keys, String foreignTable){
+        createTable(table, columns, dataTypes);
+        StringBuilder oldString = new StringBuilder();
+        StringBuilder newString = new StringBuilder();
+        int index = 0;
+
+        for (String col : columns){
+            oldString.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
+            newString.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
+
+            String key = keys[index];
+            if (key.toUpperCase(Locale.ROOT).startsWith("PRIMARY KEY")) newString.append(" PRIMARY KEY");
+            else if (key.toUpperCase(Locale.ROOT).startsWith("FOREIGN KEY")) newString.append(" ").append(table)
+                    .append("_").append(columns[index])
+                    .append("_").append(foreignTable)
+                    .append("_fk REFERENCES ").append(foreignTable);
+
+            if (index < columns.length - 1) {
+                oldString.append(", ");
+                newString.append(", ");
+            }
+            index++;
+        }
+
+        for (String oldStatement : statementCommands){
+            int statementIndex = statementCommands.indexOf(oldStatement);
+            if (oldStatement.contains(table) && oldStatement.contains(oldString)){
+                oldStatement = oldStatement.replace(oldString, newString);
+                statementCommands.set(statementIndex, oldStatement);
+                return this;
+            }
+        }
+
+        return this;
+    }
+
     public OracleSQL createTable(String table, String[] columns, String[] dataTypes, boolean dropTable){
         if (dropTable) {
             if (this.tables.contains(table)) statementCommands.add("DROP TABLE " + table + ";");
