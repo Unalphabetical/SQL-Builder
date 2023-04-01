@@ -132,41 +132,38 @@ public class OracleSQL {
         StringBuilder newString = new StringBuilder();
         int index = 0;
 
-        for (String col : columns){
+        for (String col : columns) {
 
-            if (references != null) {
+            tablesInformation.put("foreignTable-" + table + "-references", references);
 
-                tablesInformation.put("foreignTable-" + table + "-references", references);
+            oldString.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
+            newString.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
 
-                oldString.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
-                newString.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
+            String key = keys[index];
+            if (key.equals("NULL") && references != null && references[index] != null) newString.append(" REFERENCES ")
+                    .append(references[index]).append(" (")
+                    .append(columns[index]).append(")");
 
-                String key = keys[index];
-                if (key.equals("NULL") && references[index] != null) newString.append(" REFERENCES ")
-                        .append(references[index]).append(" (")
-                        .append(columns[index]).append(")");
-
-                switch (key.toUpperCase(Locale.ROOT)) {
-                    case "UNIQUE":
-                        newString.append(" ").append("CONSTRAINT ")
-                                .append(table).append("_")
-                                .append(columns[index]).append("_uk UNIQUE");
-                        break;
-                    case "PRIMARY KEY":
-                        newString.append(" PRIMARY KEY");
-                        if (references[index] != null) newString.append(" REFERENCES ")
-                                .append(references[index]).append("(")
-                                .append(columns[index]).append(")");
-                        break;
-                    case "FOREIGN KEY":
-                        if (references[index] != null) newString.append(" ").append("CONSTRAINT ")
-                                .append(table).append("_")
-                                .append(columns[index]).append("_")
-                                .append(references[index]).append("_fk REFERENCES ")
-                                .append(references[index])
-                                .append(" ON DELETE CASCADE");
-                        break;
-                }
+            switch (key.toUpperCase(Locale.ROOT)) {
+                case "UNIQUE":
+                    newString.append(" ").append("CONSTRAINT ")
+                            .append(table).append("_")
+                            .append(columns[index]).append("_uk UNIQUE");
+                    break;
+                case "PRIMARY KEY":
+                    newString.append(" PRIMARY KEY");
+                    if (references != null && references[index] != null) newString.append(" REFERENCES ")
+                            .append(references[index]).append("(")
+                            .append(columns[index]).append(")");
+                    break;
+                case "FOREIGN KEY":
+                    if (references != null && references[index] != null) newString.append(" ").append("CONSTRAINT ")
+                            .append(table).append("_")
+                            .append(columns[index]).append("_")
+                            .append(references[index]).append("_fk REFERENCES ")
+                            .append(references[index])
+                            .append(" ON DELETE CASCADE");
+                    break;
             }
 
             if (index < columns.length - 1) {
@@ -175,6 +172,7 @@ public class OracleSQL {
             }
             index++;
         }
+
         oldStatement = oldStatement.replace(oldString, newString);
         return oldStatement;
     }

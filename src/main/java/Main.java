@@ -43,8 +43,6 @@ public class Main {
         System.out.println(oracleSQL.dropTable(foreignTable));
         System.out.println(oracleSQL.createTable(foreignTable, foreignColumns, foreignDataTypes, foreignKeys, foreignReferences));
         System.out.println(oracleSQL.insert(foreignTable, foreignValues));
-
-        System.out.println(oracleSQL.select(foreignTable, foreignColumns, "SSN", "519779675"));
     }
 
 }
