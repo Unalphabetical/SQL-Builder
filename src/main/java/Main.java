@@ -48,6 +48,8 @@ public class Main {
 
         String selectStatement = oracleSQL.select(foreignTable, "ClassroomId", "SSN", "519779675");
         System.out.println(oracleSQL.subquery(classTable, "*", "ClassroomId", selectStatement));
+
+        System.out.println(oracleSQL.delete(table, "SSN", "519779675"));
     }
 
 }

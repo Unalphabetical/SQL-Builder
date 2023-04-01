@@ -262,6 +262,32 @@ public class OracleSQL {
         return select(table, displayColumn, column, value).replace("=", " LIKE ");
     }
 
+    public String delete(String table, String[] column, String value){
+        StringBuilder s = new StringBuilder("DELETE FROM ").append(table).append(" WHERE ");
+
+        String[] columns = tablesInformation.get("table-" + table + "-columns");
+        String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
+
+        int index = 0;
+        for (String display : column){
+
+            if (dataTypes[Arrays.asList(columns).indexOf(display)].startsWith("VARCHAR")) s.append('\'').append(display).append('\'');
+            else s.append(display);
+
+            if (index < column.length - 1){
+                s.append(", ");
+            }
+            index++;
+        }
+
+        s.append("=").append(value).append(";");
+        return s.toString();
+    }
+
+    public String delete(String table, String column, String values){
+        return delete(table, new String[] {column}, values);
+    }
+
     public String subquery(String table, String displayColumn, String column, String selectStatement){
         return "SELECT " + displayColumn + " FROM " + table +
                 " WHERE " + column + "=" + "(" + selectStatement.replace(";", "") + ");";
