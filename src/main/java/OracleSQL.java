@@ -171,29 +171,40 @@ public class OracleSQL {
         int index = 0;
 
         for (String col : columns){
-            oldString.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
-            newString.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
 
-            String key = keys[index];
-            if (key.equals("NULL") && references != null && references[index] != null) newString.append(" REFERENCES ")
-                    .append(references[index]).append(" (")
-                    .append(columns[index]).append(")");
+            if (references != null) {
 
-            if (key.toUpperCase(Locale.ROOT).equals("UNIQUE")){
-                newString.append(" ").append("CONSTRAINT ")
-                        .append(table).append("_")
-                        .append(columns[index]).append("_uk UNIQUE");
-            } else if (key.toUpperCase(Locale.ROOT).equals("PRIMARY KEY")) {
-                newString.append(" PRIMARY KEY");
-                if (references != null && references[index] != null) newString.append(" REFERENCES ")
+                tablesInformation.put("foreignTable-" + table + "-references", references);
+
+                oldString.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
+                newString.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
+
+                String key = keys[index];
+                if (key.equals("NULL") && references[index] != null) newString.append(" REFERENCES ")
                         .append(references[index]).append(" (")
                         .append(columns[index]).append(")");
-            } else if (key.toUpperCase(Locale.ROOT).equals("FOREIGN KEY")) {
-                if (references != null && references[index] != null) newString.append(" ").append("CONSTRAINT ")
-                        .append(table).append("_")
-                        .append(columns[index]).append("_")
-                        .append(references[index]).append("_fk REFERENCES ")
-                        .append(references[index]);
+
+                switch (key.toUpperCase(Locale.ROOT)) {
+                    case "UNIQUE":
+                        newString.append(" ").append("CONSTRAINT ")
+                                .append(table).append("_")
+                                .append(columns[index]).append("_uk UNIQUE");
+                        break;
+                    case "PRIMARY KEY":
+                        newString.append(" PRIMARY KEY");
+                        if (references[index] != null) newString.append(" REFERENCES ")
+                                .append(references[index]).append(" (")
+                                .append(columns[index]).append(")");
+                        break;
+                    case "FOREIGN KEY":
+                        if (references[index] != null) newString.append(" ").append("CONSTRAINT ")
+                                .append(table).append("_")
+                                .append(columns[index]).append("_")
+                                .append(references[index]).append("_fk REFERENCES ")
+                                .append(references[index])
+                                .append(" ON DELETE CASCADE");
+                        break;
+                }
             }
 
             if (index < columns.length - 1) {
