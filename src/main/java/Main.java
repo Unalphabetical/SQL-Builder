@@ -44,6 +44,9 @@ public class Main {
         oracleSQL.createTable(foreignTable, foreignColumns, foreignDataTypes, foreignKeys, foreignReferences);
         oracleSQL.insert(foreignTable, foreignValues);
 
+        oracleSQL.select(foreignTable, foreignColumns, "SSN", "519779675");
+        oracleSQL.select(foreignTable, "*", "SSN", "519779675");
+
         oracleSQL.removeUnnecessaryStatements();
         oracleSQL.printStatements();
     }

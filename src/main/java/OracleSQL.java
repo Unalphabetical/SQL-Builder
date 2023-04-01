@@ -269,4 +269,46 @@ public class OracleSQL {
         return this;
     }
 
+    public OracleSQL select(String table, String[] displayColumns, String column, String value){
+        StringBuilder s = new StringBuilder("SELECT ");
+
+        int index = 0;
+        for (String display : displayColumns){
+            s.append(display);
+
+            if (index < displayColumns.length - 1){
+                s.append(", ");
+            }
+            index++;
+        }
+
+        s.append(" FROM ").append(table)
+                .append(" WHERE ").append(column).append("=");
+        String[] columns = tablesInformation.get("table-" + table + "-columns");
+        String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
+
+        if (dataTypes[Arrays.asList(columns).indexOf(column)].startsWith("VARCHAR")) s.append('\'').append(value).append('\'');
+        else s.append(value);
+
+        s.append(";");
+        statementCommands.add(s.toString());
+        return this;
+    }
+
+    public OracleSQL select(String table, String displayColumn, String column, String value){
+        StringBuilder s = new StringBuilder("SELECT ").append(displayColumn).append(" FROM ").append(table)
+                .append(" WHERE ").append(column).append("=");
+
+        String[] columns = tablesInformation.get("table-" + table + "-columns");
+        String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
+
+        if (dataTypes[Arrays.asList(columns).indexOf(column)].startsWith("VARCHAR")) s.append('\'').append(value).append('\'');
+        else s.append(value);
+
+        s.append(";");
+        statementCommands.add(s.toString());
+        return this;
+    }
+
+
 }
