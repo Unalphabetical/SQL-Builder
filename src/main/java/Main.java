@@ -43,6 +43,11 @@ public class Main {
         System.out.println(oracleSQL.dropTable(foreignTable));
         System.out.println(oracleSQL.createTable(foreignTable, foreignColumns, foreignDataTypes, foreignKeys, foreignReferences));
         System.out.println(oracleSQL.insert(foreignTable, foreignValues));
+
+        System.out.println(oracleSQL.selectIn(foreignTable, "*", "SSN", "519779675"));
+
+        String selectStatement = oracleSQL.select(foreignTable, "ClassroomId", "SSN", "519779675");
+        System.out.println(oracleSQL.subquery(classTable, "*", "ClassroomId", selectStatement));
     }
 
 }

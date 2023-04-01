@@ -246,4 +246,25 @@ public class OracleSQL {
         return select(table, new String[] {displayColumn}, column, value);
     }
 
+    public String selectIn(String table, String[] displayColumn, String column, String value){
+        return select(table, displayColumn, column, value).replace("=", " IN ");
+    }
+
+    public String selectIn(String table, String displayColumn, String column, String value){
+        return select(table, displayColumn, column, value).replace("=", " IN ");
+    }
+
+    public String selectLike(String table, String[] displayColumn, String column, String value){
+        return select(table, displayColumn, column, value).replace("=", " LIKE ");
+    }
+
+    public String selectLike(String table, String displayColumn, String column, String value){
+        return select(table, displayColumn, column, value).replace("=", " LIKE ");
+    }
+
+    public String subquery(String table, String displayColumn, String column, String selectStatement){
+        return "SELECT " + displayColumn + " FROM " + table +
+                " WHERE " + column + "=" + "(" + selectStatement.replace(";", "") + ");";
+    }
+
 }
