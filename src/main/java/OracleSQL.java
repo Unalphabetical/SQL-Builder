@@ -288,9 +288,13 @@ public class OracleSQL {
         return delete(table, new String[] {column}, values);
     }
 
-    public String subquery(String table, String displayColumn, String column, String selectStatement){
+    public String selectSubquery(String table, String displayColumn, String column, String selectStatement){
         return "SELECT " + displayColumn + " FROM " + table +
                 " WHERE " + column + "=" + "(" + selectStatement.replace(";", "") + ");";
+    }
+
+    public String deleteSubquery(String table, String column, String selectStatement){
+        return "DELETE FROM " + table + " WHERE " + column + "=" + "(" + selectStatement.replace(";", "") + ");";
     }
 
 }
