@@ -17,18 +17,14 @@ public class OracleSQL {
     List<String> tables;
     Map<String, String[]> tablesInformation;
 
-    List<String> statementCommands;
-
     public OracleSQL() {
         this.tables = new ArrayList<>();
         this.tablesInformation = new HashMap<>();
-        this.statementCommands = new ArrayList<>();
     }
 
     public OracleSQL(String host, String port, String serviceType) {
         this.tables = new ArrayList<>();
         this.tablesInformation = new HashMap<>();
-        this.statementCommands = new ArrayList<>();
         this.host = host;
         this.port = port;
         this.serviceType = serviceType;
@@ -37,7 +33,6 @@ public class OracleSQL {
     public OracleSQL(String host, String port, String serviceType, String username, String password) {
         this.tables = new ArrayList<>();
         this.tablesInformation = new HashMap<>();
-        this.statementCommands = new ArrayList<>();
         this.host = host;
         this.port = port;
         this.serviceType = serviceType;
@@ -90,12 +85,6 @@ public class OracleSQL {
         return this;
     }
 
-    public void printStatements(){
-        for (String statements : this.statementCommands) {
-            System.out.println(statements);
-        }
-    }
-
     public OracleSQL estalishConnection() {
         try {
             DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
@@ -108,33 +97,7 @@ public class OracleSQL {
         return this;
     }
 
-    public OracleSQL removeUnnecessaryStatements(){
-        if (statementCommands.size() <= 1) return this;
-        for (int i = 0; i < statementCommands.size(); i++){
-            if (i < statementCommands.size() - 1) {
-
-                String currentStatement = statementCommands.get(i);
-                String nextStatement = statementCommands.get(i + 1);
-                
-                if (currentStatement.toUpperCase(Locale.ROOT).startsWith("CREATE TABLE ")) {
-                    if (nextStatement.toUpperCase(Locale.ROOT).startsWith("CREATE TABLE ")) {
-
-                        String[] splitStatement = currentStatement.split("CREATE TABLE ");
-                        String tableRemove = splitStatement[1].replace(", ", "").split(" ")[0].trim();
-                        String nextTable = nextStatement.split("CREATE TABLE ")[1].replace(", ", "").split(" ")[0].trim();
-
-                        if (nextTable.equals(tableRemove)) {
-                            statementCommands.remove(statementCommands.get(i));
-                        }
-                    }
-                }
-            }
-        }
-
-        return this;
-    }
-
-    public OracleSQL createTable(String table, String[] columns, String[] dataTypes) {
+    public String createTable(String table, String[] columns, String[] dataTypes) {
         int tableIndex = tables.indexOf(table);
         if (tableIndex == -1) tableIndex = 0;
         if (tableIndex >= tables.size()) tables.add(table);
@@ -160,12 +123,11 @@ public class OracleSQL {
         }
 
         s.append(");");
-        statementCommands.add(s.toString());
-        return this;
+        return s.toString();
     }
 
-    public OracleSQL createTable(String table, String[] columns, String[] dataTypes, String[] keys, String[] references) {
-        if (!statementCommands.contains(table)) createTable(table, columns, dataTypes);
+    public String createTable(String table, String[] columns, String[] dataTypes, String[] keys, String[] references) {
+        String oldStatement = createTable(table, columns, dataTypes);
         StringBuilder oldString = new StringBuilder();
         StringBuilder newString = new StringBuilder();
         int index = 0;
@@ -193,7 +155,7 @@ public class OracleSQL {
                     case "PRIMARY KEY":
                         newString.append(" PRIMARY KEY");
                         if (references[index] != null) newString.append(" REFERENCES ")
-                                .append(references[index]).append(" (")
+                                .append(references[index]).append("(")
                                 .append(columns[index]).append(")");
                         break;
                     case "FOREIGN KEY":
@@ -213,25 +175,15 @@ public class OracleSQL {
             }
             index++;
         }
-
-        for (String oldStatement : statementCommands) {
-            int statementIndex = statementCommands.indexOf(oldStatement);
-            if (oldStatement.contains(table) && oldStatement.contains(oldString)){
-                oldStatement = oldStatement.replace(oldString, newString);
-                statementCommands.set(statementIndex, oldStatement);
-                return this;
-            }
-        }
-
-        return this;
+        oldStatement = oldStatement.replace(oldString, newString);
+        return oldStatement;
     }
 
-    public OracleSQL dropTable(String table){
-        statementCommands.add("DROP TABLE " + table + ";");
-        return this;
+    public String dropTable(String table){
+        return "DROP TABLE " + table + ";";
     }
 
-    public OracleSQL insert(String table, String[] values) {
+    public String insert(String table, String[] values) {
         String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
 
         StringBuilder s = new StringBuilder("INSERT INTO ").append(table).append(" VALUES (");
@@ -264,12 +216,10 @@ public class OracleSQL {
             index++;
         }
         s.append(");");
-
-        statementCommands.add(s.toString());
-        return this;
+        return s.toString();
     }
 
-    public OracleSQL select(String table, String[] displayColumns, String column, String value){
+    public String select(String table, String[] displayColumns, String column, String value){
         StringBuilder s = new StringBuilder("SELECT ");
 
         int index = 0;
@@ -291,24 +241,11 @@ public class OracleSQL {
         else s.append(value);
 
         s.append(";");
-        statementCommands.add(s.toString());
-        return this;
+        return s.toString();
     }
 
-    public OracleSQL select(String table, String displayColumn, String column, String value){
-        StringBuilder s = new StringBuilder("SELECT ").append(displayColumn).append(" FROM ").append(table)
-                .append(" WHERE ").append(column).append("=");
-
-        String[] columns = tablesInformation.get("table-" + table + "-columns");
-        String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
-
-        if (dataTypes[Arrays.asList(columns).indexOf(column)].startsWith("VARCHAR")) s.append('\'').append(value).append('\'');
-        else s.append(value);
-
-        s.append(";");
-        statementCommands.add(s.toString());
-        return this;
+    public String select(String table, String displayColumn, String column, String value){
+        return select(table, new String[] {displayColumn}, column, value);
     }
-
 
 }
