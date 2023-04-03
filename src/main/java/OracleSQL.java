@@ -288,6 +288,31 @@ public class OracleSQL {
         return delete(table, new String[] {column}, values);
     }
 
+    public String update(String table, String[] columns, String[] values, String columnCondition, String valueCondition){
+        StringBuilder s = new StringBuilder("UPDATE ").append(table).append(" SET ");
+        String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
+
+        int index = 0;
+
+        for (String value : values) {
+            s.append(columns[index]).append("=");
+            if (dataTypes[index].startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) s.append('\'');
+            s.append(value);
+            if (dataTypes[index].startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) s.append('\'');
+            if (index < values.length - 1) s.append(", ");
+
+            index++;
+        }
+
+        s.append(" WHERE ").append(columnCondition).append("=").append(valueCondition).append(";");
+
+        return s.toString();
+    }
+
+    public String update(String table, String columns, String values, String columnCondition, String valueCondition){
+        return update(table, new String[]{columns}, new String[]{values}, columnCondition, valueCondition);
+    }
+
     public String selectSubquery(String table, String displayColumn, String column, String selectStatement){
         return "SELECT " + displayColumn + " FROM " + table +
                 " WHERE " + column + "=" + "(" + selectStatement.replace(";", "") + ");";
@@ -295,6 +320,27 @@ public class OracleSQL {
 
     public String deleteSubquery(String table, String column, String selectStatement){
         return "DELETE FROM " + table + " WHERE " + column + "=" + "(" + selectStatement.replace(";", "") + ");";
+    }
+
+    public String updateSubquery(String table, String[] columns, String[] values, String columnCondition, String selectStatement){
+        StringBuilder s = new StringBuilder("UPDATE ").append(table).append(" SET ");
+        String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
+
+        int index = 0;
+
+        for (String value : values) {
+            s.append(columns[index]).append("=");
+            if (dataTypes[index].startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) s.append('\'');
+            s.append(value);
+            if (dataTypes[index].startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) s.append('\'');
+            if (index < values.length - 1) s.append(", ");
+
+            index++;
+        }
+
+        s.append(" WHERE ").append(columnCondition).append("=").append("(").append(selectStatement.replace(";", "")).append(");");
+
+        return s.toString();
     }
 
 }
