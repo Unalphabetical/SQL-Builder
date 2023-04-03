@@ -17,14 +17,18 @@ public class OracleSQL {
     List<String> tables;
     Map<String, String[]> tablesInformation;
 
+    List<String> executableStatements;
+
     public OracleSQL() {
         this.tables = new ArrayList<>();
         this.tablesInformation = new HashMap<>();
+        this.executableStatements = Collections.synchronizedList(new ArrayList<>());
     }
 
     public OracleSQL(String host, String port, String serviceType) {
         this.tables = new ArrayList<>();
         this.tablesInformation = new HashMap<>();
+        this.executableStatements = Collections.synchronizedList(new ArrayList<>());
         this.host = host;
         this.port = port;
         this.serviceType = serviceType;
@@ -33,6 +37,7 @@ public class OracleSQL {
     public OracleSQL(String host, String port, String serviceType, String username, String password) {
         this.tables = new ArrayList<>();
         this.tablesInformation = new HashMap<>();
+        this.executableStatements = Collections.synchronizedList(new ArrayList<>());
         this.host = host;
         this.port = port;
         this.serviceType = serviceType;
@@ -123,11 +128,14 @@ public class OracleSQL {
         }
 
         s.append(");");
+        executableStatements.add(s.toString());
         return s.toString();
     }
 
     public String createTable(String table, String[] columns, String[] dataTypes, String[] keys, String[] references) {
         String oldStatement = createTable(table, columns, dataTypes);
+        executableStatements.remove(oldStatement);
+
         StringBuilder oldString = new StringBuilder();
         StringBuilder newString = new StringBuilder();
         int index = 0;
@@ -174,11 +182,15 @@ public class OracleSQL {
         }
 
         oldStatement = oldStatement.replace(oldString, newString);
+        executableStatements.add(oldStatement);
         return oldStatement;
     }
 
     public String dropTable(String table){
-        return "DROP TABLE " + table + ";";
+        String s = "DROP TABLE " + table + ";";
+
+        executableStatements.add(s);
+        return s;
     }
 
     public String insert(String table, String[] values) {
@@ -213,7 +225,9 @@ public class OracleSQL {
 
             index++;
         }
+
         s.append(");");
+        executableStatements.add(s.toString());
         return s.toString();
     }
 
@@ -239,27 +253,51 @@ public class OracleSQL {
         else s.append(value);
 
         s.append(";");
+        executableStatements.add(s.toString());
         return s.toString();
     }
 
     public String select(String table, String displayColumn, String column, String value){
-        return select(table, new String[] {displayColumn}, column, value);
+        String s = select(table, new String[] {displayColumn}, column, value);
+        executableStatements.remove(s);
+        executableStatements.add(s);
+        return s;
     }
 
     public String selectIn(String table, String[] displayColumn, String column, String value){
-        return select(table, displayColumn, column, value).replace("=", " IN ");
+        String s = select(table, displayColumn, column, value);
+        executableStatements.remove(s);
+
+        s = s.replace("=", " IN ");
+        executableStatements.add(s);
+        return s;
     }
 
     public String selectIn(String table, String displayColumn, String column, String value){
-        return select(table, displayColumn, column, value).replace("=", " IN ");
+        String s = select(table, displayColumn, column, value);
+        executableStatements.remove(s);
+
+        s = s.replace("=", " IN ");
+        executableStatements.add(s);
+        return s;
     }
 
     public String selectLike(String table, String[] displayColumn, String column, String value){
-        return select(table, displayColumn, column, value).replace("=", " LIKE ");
+        String s = select(table, displayColumn, column, value);
+        executableStatements.remove(s);
+
+        s = s.replace("=", " LIKE ");
+        executableStatements.add(s);
+        return s;
     }
 
     public String selectLike(String table, String displayColumn, String column, String value){
-        return select(table, displayColumn, column, value).replace("=", " LIKE ");
+        String s = select(table, displayColumn, column, value);
+        executableStatements.remove(s);
+
+        s = s.replace("=", " LIKE ");
+        executableStatements.add(s);
+        return s;
     }
 
     public String delete(String table, String[] column, String value){
@@ -281,6 +319,7 @@ public class OracleSQL {
         }
 
         s.append("=").append(value).append(";");
+        executableStatements.add(s.toString());
         return s.toString();
     }
 
@@ -306,6 +345,7 @@ public class OracleSQL {
 
         s.append(" WHERE ").append(columnCondition).append("=").append(valueCondition).append(";");
 
+        executableStatements.add(s.toString());
         return s.toString();
     }
 
@@ -314,12 +354,18 @@ public class OracleSQL {
     }
 
     public String selectSubquery(String table, String displayColumn, String column, String selectStatement){
-        return "SELECT " + displayColumn + " FROM " + table +
+        String s = "SELECT " + displayColumn + " FROM " + table +
                 " WHERE " + column + "=" + "(" + selectStatement.replace(";", "") + ");";
+
+        executableStatements.add(s);
+        return s;
     }
 
     public String deleteSubquery(String table, String column, String selectStatement){
-        return "DELETE FROM " + table + " WHERE " + column + "=" + "(" + selectStatement.replace(";", "") + ");";
+        String s = "DELETE FROM " + table + " WHERE " + column + "=" + "(" + selectStatement.replace(";", "") + ");";
+
+        executableStatements.add(s);
+        return s;
     }
 
     public String updateSubquery(String table, String[] columns, String[] values, String columnCondition, String selectStatement){
@@ -340,7 +386,45 @@ public class OracleSQL {
 
         s.append(" WHERE ").append(columnCondition).append("=").append("(").append(selectStatement.replace(";", "")).append(");");
 
+        executableStatements.add(s.toString());
         return s.toString();
+    }
+
+    public void rearrangeStatements() {
+        List<String> newlyArrangedExecutableStatements = new ArrayList<>();
+
+        for (String table : tables) {
+            String[] references = tablesInformation.get("foreignTable-" + table + "-references");
+
+            for (int i = 0; i < executableStatements.size(); i++) {
+                String statements = executableStatements.get(i);
+                if (statements.startsWith("DROP TABLE " + table)) {
+                    newlyArrangedExecutableStatements.add(statements);
+                    executableStatements.remove(statements);
+                }
+            }
+
+            for (String reference : references) {
+                for (int i = 0; i < executableStatements.size(); i++) {
+                    String statements = executableStatements.get(i);
+                    if (statements.startsWith("DROP TABLE " + reference)) {
+                        newlyArrangedExecutableStatements.add(statements);
+                        executableStatements.remove(statements);
+                    }
+                }
+            }
+        }
+
+        newlyArrangedExecutableStatements.addAll(executableStatements);
+        this.executableStatements = newlyArrangedExecutableStatements;
+    }
+
+    public void printStatements(){
+        this.rearrangeStatements();
+
+        for (String statements : executableStatements){
+            System.out.println(statements);
+        }
     }
 
 }
