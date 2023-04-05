@@ -19,11 +19,19 @@ public class OracleSQL {
 
     List<String> executableStatements;
 
+    /**
+     * Default constructor that initializes everything
+     */
+
     public OracleSQL() {
         this.tables = new ArrayList<>();
         this.tablesInformation = new HashMap<>();
         this.executableStatements = Collections.synchronizedList(new ArrayList<>());
     }
+
+    /**
+     * Constructor that initializes the host, port, service type, and everything else
+     */
 
     public OracleSQL(String host, String port, String serviceType) {
         this.tables = new ArrayList<>();
@@ -33,6 +41,10 @@ public class OracleSQL {
         this.port = port;
         this.serviceType = serviceType;
     }
+
+    /**
+     * Constructor that initializes the host, port, service type, username, password, and everything else
+     */
 
     public OracleSQL(String host, String port, String serviceType, String username, String password) {
         this.tables = new ArrayList<>();
@@ -45,51 +57,112 @@ public class OracleSQL {
         this.password = password;
     }
 
+    /**
+     * Get the host of the SQL server
+     *
+     * @return The host
+     */
+
     public String getHost() {
         return host;
     }
+
+    /**
+     * Get the port of the SQL server
+     *
+     * @return The port
+     */
 
     public String getPort() {
         return port;
     }
 
+    /**
+     * Get the service type of the SQL server
+     *
+     * @return The service type
+     */
+
     public String getServiceType() {
         return serviceType;
     }
+
+    /**
+     * Get the username of the SQL server
+     *
+     * @return The username
+     */
 
     public String getUsername() {
         return username;
     }
 
+    /**
+     * Get the password of the SQL server
+     *
+     * @return The password
+     */
+
     public String getPassword() {
         return password;
     }
 
+    /**
+     * Sets the host of the SQL server
+     *
+     * @param host String
+     */
     public OracleSQL setHost(String host) {
         this.host = host;
         return this;
     }
 
+    /**
+     * Sets the port of the SQL server
+     *
+     * @param port String
+     */
     public OracleSQL setPort(String port) {
         this.port = port;
         return this;
     }
 
+    /**
+     * Sets the service type of the SQL server
+     *
+     * @param serviceType String
+     */
     public OracleSQL setServiceType(String serviceType) {
         this.serviceType = serviceType;
         return this;
     }
 
+    /**
+     * Sets the username of the SQL server
+     *
+     * @param username String
+     */
     public OracleSQL setUsername(String username) {
         this.username = username;
         return this;
     }
 
+    /**
+     * Sets the password of the SQL server
+     *
+     * @param password String
+     */
     public OracleSQL setPassword(String password) {
         this.password = password;
         return this;
     }
 
+    /**
+     * Makes a connection towards the SQL server
+     * and returns the current class to allow building
+     *
+     * @return OracleSQL
+     */
     public OracleSQL estalishConnection() {
         try {
             DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
@@ -101,6 +174,16 @@ public class OracleSQL {
         }
         return this;
     }
+
+    /**
+     * Returns the basic SQL table statement
+     *
+     * @param table A table
+     * @param columns An array of columns names for the table
+     * @param dataTypes An array of data types for the table
+     *
+     * @return A create table statement
+     */
 
     public String createTable(String table, String[] columns, String[] dataTypes) {
         int tableIndex = tables.indexOf(table);
@@ -131,6 +214,18 @@ public class OracleSQL {
         executableStatements.add(s.toString());
         return s.toString();
     }
+
+    /**
+     * Returns a more advanced SQL table statement
+     *
+     * @param table A String
+     * @param columns An array of column names for the table
+     * @param dataTypes An array of data types for the table i.e. NUMBER
+     * @param keys An array of key types for the columns i.e. FOREIGN
+     * @param references An array of table references for the columns
+     *
+     * @return A create table statement with keys and references
+     */
 
     public String createTable(String table, String[] columns, String[] dataTypes, String[] keys, String[] references) {
         String oldStatement = createTable(table, columns, dataTypes);
@@ -186,12 +281,29 @@ public class OracleSQL {
         return oldStatement;
     }
 
+    /**
+     * Returns a basic SQL drop table statement
+     *
+     * @param table A table
+     *
+     * @return A drop table statement
+     */
+
     public String dropTable(String table){
         String s = "DROP TABLE " + table + ";";
 
         executableStatements.add(s);
         return s;
     }
+
+    /**
+     * Returns a basic SQL insert table statement
+     *
+     * @param table A table
+     * @param values An array of values that will be inserted
+     *
+     * @return An insert table statement
+     */
 
     public String insert(String table, String[] values) {
         String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
@@ -231,6 +343,17 @@ public class OracleSQL {
         return s.toString();
     }
 
+    /**
+     * Returns a basic SQL select table statement that allows you to view many columns with equal
+     *
+     * @param table A table
+     * @param displayColumns An array of columns that you want to see
+     * @param column A column that will be compared with the value
+     * @param value A value that will be compared with equal
+     *
+     * @return A select table statement that can view many columns with equal
+     */
+
     public String select(String table, String[] displayColumns, String column, String value){
         StringBuilder s = new StringBuilder("SELECT ");
 
@@ -257,12 +380,34 @@ public class OracleSQL {
         return s.toString();
     }
 
+    /**
+     * Returns a basic SQL select table statement that allows you to view a column with equal
+     *
+     * @param table A table
+     * @param displayColumn A column that you want to see
+     * @param column A column that will be compared with the value
+     * @param value A value that will be compared with equal
+     *
+     * @return A select table statement that can view a column with equal
+     */
+
     public String select(String table, String displayColumn, String column, String value){
         String s = select(table, new String[] {displayColumn}, column, value);
         executableStatements.remove(s);
         executableStatements.add(s);
         return s;
     }
+
+    /**
+     * Returns a SQL select table statement that allows you to view many columns with IN instead of equal.
+     *
+     * @param table A table
+     * @param displayColumn An array of columns that you want to see
+     * @param column A column that will be compared with the value
+     * @param value A value that will be compared with IN
+     *
+     * @return A select table statement that can view many columns with IN
+     */
 
     public String selectIn(String table, String[] displayColumn, String column, String value){
         String s = select(table, displayColumn, column, value);
@@ -273,6 +418,17 @@ public class OracleSQL {
         return s;
     }
 
+    /**
+     * Returns a SQL select table statement that allows you to view a column with IN instead of equal.
+     *
+     * @param table A table
+     * @param displayColumn A column that you want to see
+     * @param column A column that will be compared with the value
+     * @param value A value that will be compared with IN
+     *
+     * @return A select table statement that can view a column with IN
+     */
+
     public String selectIn(String table, String displayColumn, String column, String value){
         String s = select(table, displayColumn, column, value);
         executableStatements.remove(s);
@@ -281,6 +437,17 @@ public class OracleSQL {
         executableStatements.add(s);
         return s;
     }
+
+    /**
+     * Returns a SQL select table statement that allows you to view many columns with LIKE instead of equal or IN.
+     *
+     * @param table A table
+     * @param displayColumn A column that you want to see
+     * @param column A column that will be compared with the value
+     * @param value A value that will be compared with LIKE
+     *
+     * @return A select table statement that can view many columns with LIKE
+     */
 
     public String selectLike(String table, String[] displayColumn, String column, String value){
         String s = select(table, displayColumn, column, value);
@@ -291,6 +458,17 @@ public class OracleSQL {
         return s;
     }
 
+    /**
+     * Returns a SQL select table statement that allows you to view a column with LIKE instead of equal or IN.
+     *
+     * @param table A table
+     * @param displayColumn A column that you want to see
+     * @param column A column that will be compared with the value
+     * @param value A value that will be compared with LIKE
+     *
+     * @return A select table statement that can view a column with LIKE
+     */
+
     public String selectLike(String table, String displayColumn, String column, String value){
         String s = select(table, displayColumn, column, value);
         executableStatements.remove(s);
@@ -300,32 +478,65 @@ public class OracleSQL {
         return s;
     }
 
-    public String delete(String table, String[] column, String value){
+    /**
+     * Returns a SQL delete table statement that allows you to delete the table if the columns matches the values
+     *
+     * @param table A table
+     * @param columns An array of columns that will be compared with the value
+     * @param values An array of values that will be compared with equal
+     *
+     * @return A delete table statement that will delete the table if the columns matches the values
+     */
+
+    public String delete(String table, String[] columns, String[] values){
         StringBuilder s = new StringBuilder("DELETE FROM ").append(table).append(" WHERE ");
 
-        String[] columns = tablesInformation.get("table-" + table + "-columns");
+        String[] storedColumns = tablesInformation.get("table-" + table + "-columns");
         String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
 
         int index = 0;
-        for (String display : column){
+        for (String display : columns){
 
-            if (dataTypes[Arrays.asList(columns).indexOf(display)].startsWith("VARCHAR")) s.append('\'').append(display).append('\'');
+            if (dataTypes[Arrays.asList(storedColumns).indexOf(display)].startsWith("VARCHAR")) s.append('\'').append(display).append('\'');
             else s.append(display);
+            s.append("=").append(values[index]);
 
-            if (index < column.length - 1){
-                s.append(", ");
+            if (index < columns.length - 1){
+                s.append(" AND ");
             }
             index++;
         }
 
-        s.append("=").append(value).append(";");
+        s.append(";");
         executableStatements.add(s.toString());
         return s.toString();
     }
 
-    public String delete(String table, String column, String values){
-        return delete(table, new String[] {column}, values);
+    /**
+     * Returns a SQL delete table statement that allows you to delete the table if the column matches the value
+     *
+     * @param table A table
+     * @param column A column that will be compared with the value
+     * @param value A value that will be compared with equal
+     *
+     * @return A delete table statement that will delete the table if the column matches the value
+     */
+
+    public String delete(String table, String column, String value){
+        return delete(table, new String[] {column}, new String[] {value});
     }
+
+    /**
+     * Returns a SQL update table statement that updates the table's columns
+     *
+     * @param table A table
+     * @param columns An array of columns that will be updated
+     * @param values An array of values that will replace the old values
+     * @param columnCondition A column that will be compared with the value
+     * @param valueCondition A value that will be compared with equal
+     *
+     * @return An update table statement that updates the table's columns
+     */
 
     public String update(String table, String[] columns, String[] values, String columnCondition, String valueCondition){
         StringBuilder s = new StringBuilder("UPDATE ").append(table).append(" SET ");
@@ -349,17 +560,50 @@ public class OracleSQL {
         return s.toString();
     }
 
+    /**
+     * Returns a SQL update table statement that updates a table's column
+     *
+     * @param table A table
+     * @param columns A column that will be updated
+     * @param values A value that will replace the old value
+     * @param columnCondition A column that will be compared with a value
+     * @param valueCondition A value that will be compared with equal
+     *
+     * @return An update table statement that updates the table's columns
+     */
+
     public String update(String table, String columns, String values, String columnCondition, String valueCondition){
         return update(table, new String[]{columns}, new String[]{values}, columnCondition, valueCondition);
     }
 
-    public String selectSubquery(String table, String displayColumn, String column, String selectStatement){
-        String s = "SELECT " + displayColumn + " FROM " + table +
-                " WHERE " + column + "=" + "(" + selectStatement.replace(";", "") + ");";
+    /**
+     * Returns a SQL select subquery statement that allows you to view a column if the column equals the value of the select table statement
+     *
+     * @param table A table
+     * @param column A column that you want to see
+     * @param columnCondition A column that will be compared with another select table statement
+     * @param selectStatement A select table statement that will be compared with equal
+     *
+     * @return A select subquery statement that that allows you to view a column if the column equals the value of the select table statement
+     */
+
+    public String selectSubquery(String table, String column, String columnCondition, String selectStatement){
+        String s = "SELECT " + column + " FROM " + table +
+                " WHERE " + columnCondition + "=" + "(" + selectStatement.replace(";", "") + ");";
 
         executableStatements.add(s);
         return s;
     }
+
+    /**
+     * Returns a SQL delete subquery table statement that allows you to delete the table if the column equals the value of the select table statement
+     *
+     * @param table A table
+     * @param column A column that will be compared with the value
+     * @param selectStatement A select table statement that will be compared with equal
+     *
+     * @return A delete table subquery statement that will delete the table if the column equals the value of the select table statement
+     */
 
     public String deleteSubquery(String table, String column, String selectStatement){
         String s = "DELETE FROM " + table + " WHERE " + column + "=" + "(" + selectStatement.replace(";", "") + ");";
@@ -367,6 +611,18 @@ public class OracleSQL {
         executableStatements.add(s);
         return s;
     }
+
+    /**
+     * Returns a SQL update subquery table statement that updates a table's columns if the column equals the value of the select table statement
+     *
+     * @param table A table
+     * @param columns An arrays of columns that will be updated
+     * @param values An arrays of values that will replace the old values
+     * @param columnCondition A column that will be compared with a value
+     * @param selectStatement A select table statement that will be compared with equal
+     *
+     * @return An update subquery table statement that updates a table's columns if the column equals the value of the select table statement
+     */
 
     public String updateSubquery(String table, String[] columns, String[] values, String columnCondition, String selectStatement){
         StringBuilder s = new StringBuilder("UPDATE ").append(table).append(" SET ");
@@ -390,6 +646,9 @@ public class OracleSQL {
         return s.toString();
     }
 
+    /**
+     * Rearranges the statement so that foreign or parent tables are dropped before child tables
+     */
     public void rearrangeStatements() {
         List<String> newlyArrangedExecutableStatements = new ArrayList<>();
 
@@ -419,6 +678,9 @@ public class OracleSQL {
         this.executableStatements = newlyArrangedExecutableStatements;
     }
 
+    /**
+     * Rearranges and then debugs the statements by printing them out
+     */
     public void printStatements(){
         this.rearrangeStatements();
 

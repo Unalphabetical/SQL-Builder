@@ -50,7 +50,7 @@ public class Main {
         oracleSQL.selectSubquery(classTable, "*", "ClassroomId", selectStatement);
         oracleSQL.deleteSubquery(classTable, "ClassroomId", selectStatement);
 
-        oracleSQL.delete(table, "SSN", "519779675");
+        oracleSQL.delete(foreignTable, new String[]{"SSN", "ClassroomId"}, new String[] {"519779675", "1"});
 
         values = new String[]{"Johnny", "Doey", "519779672"};
         oracleSQL.update(table, columns, values, "SSN", "519779675");
