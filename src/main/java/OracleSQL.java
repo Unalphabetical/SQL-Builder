@@ -13,43 +13,25 @@ public class OracleSQL {
     private String serviceType;
     private String username;
     private String password;
-
-    List<String> tables;
-    Map<String, String[]> tablesInformation;
-
-    List<String> executableStatements;
-
-    /**
-     * Default constructor that initializes everything
-     */
+    private List<String> statements;
+    private List<Table> tables;
 
     public OracleSQL() {
         this.tables = new ArrayList<>();
-        this.tablesInformation = new HashMap<>();
-        this.executableStatements = Collections.synchronizedList(new ArrayList<>());
+        this.statements = Collections.synchronizedList(new ArrayList<>());
     }
-
-    /**
-     * Constructor that initializes the host, port, service type, and everything else
-     */
 
     public OracleSQL(String host, String port, String serviceType) {
         this.tables = new ArrayList<>();
-        this.tablesInformation = new HashMap<>();
-        this.executableStatements = Collections.synchronizedList(new ArrayList<>());
+        this.statements = Collections.synchronizedList(new ArrayList<>());
         this.host = host;
         this.port = port;
         this.serviceType = serviceType;
     }
 
-    /**
-     * Constructor that initializes the host, port, service type, username, password, and everything else
-     */
-
     public OracleSQL(String host, String port, String serviceType, String username, String password) {
         this.tables = new ArrayList<>();
-        this.tablesInformation = new HashMap<>();
-        this.executableStatements = Collections.synchronizedList(new ArrayList<>());
+        this.statements = Collections.synchronizedList(new ArrayList<>());
         this.host = host;
         this.port = port;
         this.serviceType = serviceType;
@@ -108,10 +90,31 @@ public class OracleSQL {
     }
 
     /**
+     * Get the statements that are going to be executed
+     *
+     * @return The statements
+     */
+
+    public List<String> getStatements() {
+        return statements;
+    }
+
+    /**
+     * Get the tables that are going to be in the SQL server
+     *
+     * @return The tables
+     */
+
+    public List<Table> getTables() {
+        return tables;
+    }
+
+    /**
      * Sets the host of the SQL server
      *
      * @param host String
      */
+
     public OracleSQL setHost(String host) {
         this.host = host;
         return this;
@@ -122,6 +125,7 @@ public class OracleSQL {
      *
      * @param port String
      */
+
     public OracleSQL setPort(String port) {
         this.port = port;
         return this;
@@ -132,6 +136,7 @@ public class OracleSQL {
      *
      * @param serviceType String
      */
+
     public OracleSQL setServiceType(String serviceType) {
         this.serviceType = serviceType;
         return this;
@@ -142,6 +147,7 @@ public class OracleSQL {
      *
      * @param username String
      */
+
     public OracleSQL setUsername(String username) {
         this.username = username;
         return this;
@@ -152,6 +158,7 @@ public class OracleSQL {
      *
      * @param password String
      */
+
     public OracleSQL setPassword(String password) {
         this.password = password;
         return this;
@@ -163,6 +170,7 @@ public class OracleSQL {
      *
      * @return OracleSQL
      */
+
     public OracleSQL estalishConnection() {
         try {
             DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
@@ -176,109 +184,62 @@ public class OracleSQL {
     }
 
     /**
-     * Returns the basic SQL table statement
-     *
-     * @param table A table
-     * @param columns An array of columns names for the table
-     * @param dataTypes An array of data types for the table
-     *
-     * @return A create table statement
-     */
-
-    public String createTable(String table, String[] columns, String[] dataTypes) {
-        int tableIndex = tables.indexOf(table);
-        if (tableIndex == -1) tableIndex = 0;
-        if (tableIndex >= tables.size()) tables.add(table);
-        else tables.set(tableIndex, table);
-
-        tablesInformation.put("table-" + table + "-columns", columns);
-        tablesInformation.put("table-" + table + "-dataTypes", dataTypes);
-
-        StringBuilder s = new StringBuilder("CREATE TABLE ").append(table).append(" (");
-        int dateIndex = 0;
-        int index = 0;
-
-        for (String col : columns) {
-            if (index < columns.length - 1)
-                s.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]).append(", ");
-            else s.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
-
-            if (dataTypes[Utilities.findIndex(columns, col)].startsWith("DATE")) {
-                tablesInformation.put("table-" + table + "-dateformat-" + dateIndex, new String[]{"DD-MON-YY"});
-                dateIndex++;
-            }
-            index++;
-        }
-
-        s.append(");");
-        executableStatements.add(s.toString());
-        return s.toString();
-    }
-
-    /**
-     * Returns a more advanced SQL table statement
+     * Returns a SQL table statement
      *
      * @param table A String
-     * @param columns An array of column names for the table
-     * @param dataTypes An array of data types for the table i.e. NUMBER
-     * @param keys An array of key types for the columns i.e. FOREIGN
-     * @param references An array of table references for the columns
      *
      * @return A create table statement with keys and references
      */
 
-    public String createTable(String table, String[] columns, String[] dataTypes, String[] keys, String[] references) {
-        String oldStatement = createTable(table, columns, dataTypes);
-        executableStatements.remove(oldStatement);
+    public String createTable(Table table) {
+        if (!tables.contains(table)) tables.add(table);
 
-        StringBuilder oldString = new StringBuilder();
-        StringBuilder newString = new StringBuilder();
+        StringBuilder s = new StringBuilder("CREATE TABLE ").append(table.getName()).append(" (");
+
+        List<String> columns = table.getColumns();
+        List<String> dataTypes = table.getDataTypes();
+
         int index = 0;
 
         for (String col : columns) {
+            int columnIndex = columns.indexOf(col);
+            s.append(col).append(" ").append(dataTypes.get(columnIndex)).append(" ");
 
-            tablesInformation.put("foreignTable-" + table + "-references", references);
-
-            oldString.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
-            newString.append(col).append(" ").append(dataTypes[Utilities.findIndex(columns, col)]);
-
-            String key = keys[index];
-            if (key.equals("NULL") && references != null && references[index] != null) newString.append(" REFERENCES ")
-                    .append(references[index]).append(" (")
-                    .append(columns[index]).append(")");
-
-            switch (key.toUpperCase(Locale.ROOT)) {
-                case "UNIQUE":
-                    newString.append(" ").append("CONSTRAINT ")
-                            .append(table).append("_")
-                            .append(columns[index]).append("_uk UNIQUE");
-                    break;
-                case "PRIMARY KEY":
-                    newString.append(" PRIMARY KEY");
-                    if (references != null && references[index] != null) newString.append(" REFERENCES ")
-                            .append(references[index]).append("(")
-                            .append(columns[index]).append(")");
-                    break;
-                case "FOREIGN KEY":
-                    if (references != null && references[index] != null) newString.append(" ").append("CONSTRAINT ")
-                            .append(table).append("_")
-                            .append(columns[index]).append("_")
-                            .append(references[index]).append("_fk REFERENCES ")
-                            .append(references[index])
-                            .append(" ON DELETE CASCADE");
-                    break;
+            List<String> keys = table.getKeys();
+            List<Table> references = table.getReferences();
+            if ((keys != null) && (keys.size() > 0)) {
+                if (keys.size() > columnIndex && keys.get(columnIndex) != null) {
+                    switch (keys.get(columnIndex)) {
+                        case "UNIQUE":
+                            s.append(" ").append("CONSTRAINT ")
+                                    .append(table.getName()).append("_")
+                                    .append(table.getColumns().get(columnIndex)).append("_uk UNIQUE");
+                            break;
+                        case "PRIMARY KEY":
+                            s.append(" PRIMARY KEY");
+                            if ((references != null) && (references.size() > 0)) s.append(" REFERENCES ")
+                                    .append(references.get(columnIndex)).append("(")
+                                    .append(references.get(columnIndex).getName()).append(")");
+                            break;
+                        case "FOREIGN KEY":
+                            if ((references != null) && (references.size() > 0)) s.append(" ").append("CONSTRAINT ")
+                                    .append(table.getName()).append("_")
+                                    .append(table.getColumns().get(columnIndex)).append("_")
+                                    .append(table.getReferences().get(columnIndex).getName()).append("_fk REFERENCES ")
+                                    .append(table.getReferences().get(columnIndex).getName())
+                                    .append(" ON DELETE CASCADE");
+                            break;
+                    }
+                }
             }
-
-            if (index < columns.length - 1) {
-                oldString.append(", ");
-                newString.append(", ");
-            }
+            if (index < columns.size() - 1) s.append(", ");
             index++;
+
         }
 
-        oldStatement = oldStatement.replace(oldString, newString);
-        executableStatements.add(oldStatement);
-        return oldStatement;
+        s.append(");");
+        statements.add(s.toString());
+        return s.toString();
     }
 
     /**
@@ -289,10 +250,10 @@ public class OracleSQL {
      * @return A drop table statement
      */
 
-    public String dropTable(String table){
-        String s = "DROP TABLE " + table + ";";
+    public String dropTable(Table table){
+        String s = "DROP TABLE " + table.getName() + ";";
 
-        executableStatements.add(s);
+        statements.add(s);
         return s;
     }
 
@@ -305,41 +266,28 @@ public class OracleSQL {
      * @return An insert table statement
      */
 
-    public String insert(String table, String[] values) {
-        String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
+    public String insert(Table table, String[] values) {
+        List<String> dataTypes = table.getDataTypes();
 
-        StringBuilder s = new StringBuilder("INSERT INTO ").append(table).append(" VALUES (");
+        StringBuilder s = new StringBuilder("INSERT INTO ").append(table.getName()).append(" VALUES (");
 
         int index = 0;
-        int dateIndex = 0;
 
         for (String value : values) {
-            if (dataTypes[index].startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) {
+            if (dataTypes.get(index).startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) {
                 s.append("'");
                 s.append(value.replace("'", "''"));
                 s.append("'");
-            }
-            else {
+            } else {
                 s.append(value);
             }
 
-            if (dataTypes[index].startsWith("DATE")) {
-                if (value.startsWith("TO_DATE")){
-                    String[] splitDate = value.replace("TO_DATE", "")
-                            .replace("(", "").replace(")", "")
-                            .split(",");
-                    tablesInformation.put("table-" + table + "-dateformat-" + dateIndex, new String[] {splitDate[1]});
-                }
-                dateIndex++;
-            }
-
             if (index < values.length - 1) s.append(", ");
-
             index++;
         }
 
         s.append(");");
-        executableStatements.add(s.toString());
+        statements.add(s.toString());
         return s.toString();
     }
 
@@ -354,7 +302,7 @@ public class OracleSQL {
      * @return A select table statement that can view many columns with equal
      */
 
-    public String select(String table, String[] displayColumns, String column, String value){
+    public String select(Table table, String[] displayColumns, String column, String value){
         StringBuilder s = new StringBuilder("SELECT ");
 
         int index = 0;
@@ -367,16 +315,17 @@ public class OracleSQL {
             index++;
         }
 
-        s.append(" FROM ").append(table)
+        s.append(" FROM ").append(table.getName())
                 .append(" WHERE ").append(column).append("=");
-        String[] columns = tablesInformation.get("table-" + table + "-columns");
-        String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
 
-        if (dataTypes[Arrays.asList(columns).indexOf(column)].startsWith("VARCHAR")) s.append('\'').append(value).append('\'');
+        List<String> columns = table.getColumns();
+        List<String> dataTypes = table.getDataTypes();
+
+        if (dataTypes.get(columns.indexOf(column)).startsWith("VARCHAR")) s.append('\'').append(value).append('\'');
         else s.append(value);
 
         s.append(";");
-        executableStatements.add(s.toString());
+        statements.add(s.toString());
         return s.toString();
     }
 
@@ -391,90 +340,10 @@ public class OracleSQL {
      * @return A select table statement that can view a column with equal
      */
 
-    public String select(String table, String displayColumn, String column, String value){
+    public String select(Table table, String displayColumn, String column, String value){
         String s = select(table, new String[] {displayColumn}, column, value);
-        executableStatements.remove(s);
-        executableStatements.add(s);
-        return s;
-    }
-
-    /**
-     * Returns a SQL select table statement that allows you to view many columns with IN instead of equal.
-     *
-     * @param table A table
-     * @param displayColumn An array of columns that you want to see
-     * @param column A column that will be compared with the value
-     * @param value A value that will be compared with IN
-     *
-     * @return A select table statement that can view many columns with IN
-     */
-
-    public String selectIn(String table, String[] displayColumn, String column, String value){
-        String s = select(table, displayColumn, column, value);
-        executableStatements.remove(s);
-
-        s = s.replace("=", " IN ");
-        executableStatements.add(s);
-        return s;
-    }
-
-    /**
-     * Returns a SQL select table statement that allows you to view a column with IN instead of equal.
-     *
-     * @param table A table
-     * @param displayColumn A column that you want to see
-     * @param column A column that will be compared with the value
-     * @param value A value that will be compared with IN
-     *
-     * @return A select table statement that can view a column with IN
-     */
-
-    public String selectIn(String table, String displayColumn, String column, String value){
-        String s = select(table, displayColumn, column, value);
-        executableStatements.remove(s);
-
-        s = s.replace("=", " IN ");
-        executableStatements.add(s);
-        return s;
-    }
-
-    /**
-     * Returns a SQL select table statement that allows you to view many columns with LIKE instead of equal or IN.
-     *
-     * @param table A table
-     * @param displayColumn A column that you want to see
-     * @param column A column that will be compared with the value
-     * @param value A value that will be compared with LIKE
-     *
-     * @return A select table statement that can view many columns with LIKE
-     */
-
-    public String selectLike(String table, String[] displayColumn, String column, String value){
-        String s = select(table, displayColumn, column, value);
-        executableStatements.remove(s);
-
-        s = s.replace("=", " LIKE ");
-        executableStatements.add(s);
-        return s;
-    }
-
-    /**
-     * Returns a SQL select table statement that allows you to view a column with LIKE instead of equal or IN.
-     *
-     * @param table A table
-     * @param displayColumn A column that you want to see
-     * @param column A column that will be compared with the value
-     * @param value A value that will be compared with LIKE
-     *
-     * @return A select table statement that can view a column with LIKE
-     */
-
-    public String selectLike(String table, String displayColumn, String column, String value){
-        String s = select(table, displayColumn, column, value);
-        executableStatements.remove(s);
-
-        s = s.replace("=", " LIKE ");
-        executableStatements.add(s);
+        statements.remove(s);
+        statements.add(s);
         return s;
     }
 
@@ -482,33 +351,33 @@ public class OracleSQL {
      * Returns a SQL delete table statement that allows you to delete the table if the columns matches the values
      *
      * @param table A table
-     * @param columns An array of columns that will be compared with the value
-     * @param values An array of values that will be compared with equal
+     * @param column An array of columns that will be compared with the value
+     * @param value An array of values that will be compared with equal
      *
      * @return A delete table statement that will delete the table if the columns matches the values
      */
 
-    public String delete(String table, String[] columns, String[] values){
-        StringBuilder s = new StringBuilder("DELETE FROM ").append(table).append(" WHERE ");
+    public String delete(Table table, String[] column, String[] value){
+        StringBuilder s = new StringBuilder("DELETE FROM ").append(table.getName()).append(" WHERE ");
 
-        String[] storedColumns = tablesInformation.get("table-" + table + "-columns");
-        String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
+        List<String> columns = table.getColumns();
+        List<String> dataTypes = table.getDataTypes();
 
         int index = 0;
-        for (String display : columns){
+        for (String display : column){
+            s.append(display).append("=");
 
-            if (dataTypes[Arrays.asList(storedColumns).indexOf(display)].startsWith("VARCHAR")) s.append('\'').append(display).append('\'');
-            else s.append(display);
-            s.append("=").append(values[index]);
+            if (dataTypes.get(columns.indexOf(display)).startsWith("VARCHAR")) s.append('\'').append(value[index]).append('\'');
+            else s.append(value[index]);
 
-            if (index < columns.length - 1){
+            if (index < column.length - 1){
                 s.append(" AND ");
             }
             index++;
         }
 
         s.append(";");
-        executableStatements.add(s.toString());
+        statements.add(s.toString());
         return s.toString();
     }
 
@@ -517,20 +386,20 @@ public class OracleSQL {
      *
      * @param table A table
      * @param column A column that will be compared with the value
-     * @param value A value that will be compared with equal
+     * @param values A value that will be compared with equal
      *
      * @return A delete table statement that will delete the table if the column matches the value
      */
 
-    public String delete(String table, String column, String value){
-        return delete(table, new String[] {column}, new String[] {value});
+    public String delete(Table table, String column, String values){
+        return delete(table, new String[] {column}, new String[] {values});
     }
 
     /**
-     * Returns a SQL update table statement that updates the table's columns
+     * Returns a SQL update table statement that updates the columns of tables
      *
      * @param table A table
-     * @param columns An array of columns that will be updated
+     * @param column An array of columns that will be updated
      * @param values An array of values that will replace the old values
      * @param columnCondition A column that will be compared with the value
      * @param valueCondition A value that will be compared with equal
@@ -538,30 +407,39 @@ public class OracleSQL {
      * @return An update table statement that updates the table's columns
      */
 
-    public String update(String table, String[] columns, String[] values, String columnCondition, String valueCondition){
-        StringBuilder s = new StringBuilder("UPDATE ").append(table).append(" SET ");
-        String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
+    public String update(Table table, String[] column, String[] values, String columnCondition, String valueCondition){
+        StringBuilder s = new StringBuilder("UPDATE ").append(table.getName()).append(" SET ");
+        List<String> columns = table.getColumns();
+        List<String> dataTypes = table.getDataTypes();
 
         int index = 0;
 
         for (String value : values) {
-            s.append(columns[index]).append("=");
-            if (dataTypes[index].startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) s.append('\'');
+            s.append(column[index]).append("=");
+
+            int dataIndex = columns.indexOf(column[index]);
+            if (dataTypes.get(dataIndex).startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) s.append('\'');
             s.append(value);
-            if (dataTypes[index].startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) s.append('\'');
+            if (dataTypes.get(dataIndex).startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) s.append('\'');
             if (index < values.length - 1) s.append(", ");
 
             index++;
         }
 
-        s.append(" WHERE ").append(columnCondition).append("=").append(valueCondition).append(";");
+        int dataIndex = columns.indexOf(columnCondition);
+        s.append(" WHERE ").append(columnCondition).append("=");
 
-        executableStatements.add(s.toString());
+        if (dataTypes.get(dataIndex).startsWith("VARCHAR") && !valueCondition.equalsIgnoreCase("NULL")) s.append("'");
+        s.append(valueCondition);
+        if (dataTypes.get(dataIndex).startsWith("VARCHAR") && !valueCondition.equalsIgnoreCase("NULL")) s.append("'");
+
+        s.append(";");
+        statements.add(s.toString());
         return s.toString();
     }
 
     /**
-     * Returns a SQL update table statement that updates a table's column
+     * Returns a SQL update table statement that updates the column of a table
      *
      * @param table A table
      * @param columns A column that will be updated
@@ -572,31 +450,12 @@ public class OracleSQL {
      * @return An update table statement that updates the table's columns
      */
 
-    public String update(String table, String columns, String values, String columnCondition, String valueCondition){
+    public String update(Table table, String columns, String values, String columnCondition, String valueCondition){
         return update(table, new String[]{columns}, new String[]{values}, columnCondition, valueCondition);
     }
 
     /**
-     * Returns a SQL select subquery statement that allows you to view a column if the column equals the value of the select table statement
-     *
-     * @param table A table
-     * @param column A column that you want to see
-     * @param columnCondition A column that will be compared with another select table statement
-     * @param selectStatement A select table statement that will be compared with equal
-     *
-     * @return A select subquery statement that that allows you to view a column if the column equals the value of the select table statement
-     */
-
-    public String selectSubquery(String table, String column, String columnCondition, String selectStatement){
-        String s = "SELECT " + column + " FROM " + table +
-                " WHERE " + columnCondition + "=" + "(" + selectStatement.replace(";", "") + ");";
-
-        executableStatements.add(s);
-        return s;
-    }
-
-    /**
-     * Returns a SQL delete subquery table statement that allows you to delete the table if the column equals the value of the select table statement
+     * Returns a SQL delete subquery table statement that allows you to delete the table if the column is IN the value of the select table statement
      *
      * @param table A table
      * @param column A column that will be compared with the value
@@ -605,77 +464,48 @@ public class OracleSQL {
      * @return A delete table subquery statement that will delete the table if the column equals the value of the select table statement
      */
 
-    public String deleteSubquery(String table, String column, String selectStatement){
-        String s = "DELETE FROM " + table + " WHERE " + column + "=" + "(" + selectStatement.replace(";", "") + ");";
+    public String deleteInSubquery(Table table, String column, String selectStatement){
+        statements.remove(selectStatement);
+        String s = "DELETE FROM " + table.getName() + " WHERE " + column + " IN " + "(" + selectStatement.replace(";", "") + ";";
 
-        executableStatements.add(s);
+        statements.add(s);
         return s;
     }
 
     /**
-     * Returns a SQL update subquery table statement that updates a table's columns if the column equals the value of the select table statement
-     *
-     * @param table A table
-     * @param columns An arrays of columns that will be updated
-     * @param values An arrays of values that will replace the old values
-     * @param columnCondition A column that will be compared with a value
-     * @param selectStatement A select table statement that will be compared with equal
-     *
-     * @return An update subquery table statement that updates a table's columns if the column equals the value of the select table statement
+     * Rearranges the statement so that foreign tables are dropped before reference tables
      */
 
-    public String updateSubquery(String table, String[] columns, String[] values, String columnCondition, String selectStatement){
-        StringBuilder s = new StringBuilder("UPDATE ").append(table).append(" SET ");
-        String[] dataTypes = tablesInformation.get("table-" + table + "-dataTypes");
-
-        int index = 0;
-
-        for (String value : values) {
-            s.append(columns[index]).append("=");
-            if (dataTypes[index].startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) s.append('\'');
-            s.append(value);
-            if (dataTypes[index].startsWith("VARCHAR") && !value.equalsIgnoreCase("NULL")) s.append('\'');
-            if (index < values.length - 1) s.append(", ");
-
-            index++;
-        }
-
-        s.append(" WHERE ").append(columnCondition).append("=").append("(").append(selectStatement.replace(";", "")).append(");");
-
-        executableStatements.add(s.toString());
-        return s.toString();
-    }
-
-    /**
-     * Rearranges the statement so that foreign or parent tables are dropped before child tables
-     */
     public void rearrangeStatements() {
         List<String> newlyArrangedExecutableStatements = new ArrayList<>();
 
-        for (String table : tables) {
-            String[] references = tablesInformation.get("foreignTable-" + table + "-references");
+        for (Table table : tables) {
+            List<Table> references = table.getReferences();
 
-            for (int i = 0; i < executableStatements.size(); i++) {
-                String statements = executableStatements.get(i);
-                if (statements.startsWith("DROP TABLE " + table)) {
-                    newlyArrangedExecutableStatements.add(statements);
-                    executableStatements.remove(statements);
+            for (int i = 0; i < statements.size(); i++) {
+                String statement = statements.get(i);
+                if (statement.startsWith("DROP TABLE " + table.getName())) {
+                    newlyArrangedExecutableStatements.add(statement);
+                    statements.remove(statement);
                 }
             }
 
-            for (String reference : references) {
-                for (int i = 0; i < executableStatements.size(); i++) {
-                    String statements = executableStatements.get(i);
-                    if (statements.startsWith("DROP TABLE " + reference)) {
-                        newlyArrangedExecutableStatements.add(statements);
-                        executableStatements.remove(statements);
+            if (references != null) {
+                for (Table reference : references) {
+                    for (int i = 0; i < newlyArrangedExecutableStatements.size(); i++) {
+                        String statement = newlyArrangedExecutableStatements.get(i);
+                        if (statement.startsWith("DROP TABLE " + reference.getName())) {
+                            newlyArrangedExecutableStatements.remove(statement);
+                            newlyArrangedExecutableStatements.add(statement);
+                        }
                     }
                 }
+
             }
         }
 
-        newlyArrangedExecutableStatements.addAll(executableStatements);
-        this.executableStatements = newlyArrangedExecutableStatements;
+        newlyArrangedExecutableStatements.addAll(statements);
+        this.statements = newlyArrangedExecutableStatements;
     }
 
     /**
@@ -684,8 +514,24 @@ public class OracleSQL {
     public void printStatements(){
         this.rearrangeStatements();
 
-        for (String statements : executableStatements){
+        for (String statements : statements){
             System.out.println(statements);
+        }
+    }
+
+    /**
+     * This executes the list of statements
+     */
+
+    public void execute(){
+        this.rearrangeStatements();
+        try {
+            for (String s : this.statements) {
+                this.statement.execute(s.replace(";", ""));
+            }
+            this.statements = new ArrayList<>();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 

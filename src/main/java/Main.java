@@ -13,53 +13,33 @@ public class Main {
         System.out.println("Password: " + oracleSQL.getPassword());
         System.out.println();
 
-        String classTable = "ClassTable";
-        String[] classColumns = {"ClassroomId", "ClassroomDescription"};
-        String[] classDataTypes = {"NUMBER", "VARCHAR(70)"};
-        String[] classValues = {"1", "Computer Science 5 - Basic class"};
-        String[] classKeys = {"PRIMARY KEY", "UNIQUE"};
+        Table studentTable = new Table("StudentTable")
+                .column("SSN").dataType("VARCHAR(9)")
+                .column("fName").dataType("VARCHAR(127)")
+                .column("lName").dataType("VARCHAR(127)")
+                .key("PRIMARY KEY");
 
-        oracleSQL.dropTable(classTable);
-        oracleSQL.createTable(classTable, classColumns, classDataTypes, classKeys, null);
-        oracleSQL.insert(classTable, classValues);
+        Table majorTable = new Table("MajorTable")
+                .column("SSN").dataType("VARCHAR(9)")
+                .column("Description").dataType("VARCHAR(127)")
+                .tableReference(studentTable)
+                .key("FOREIGN KEY");
 
-        String table = "TestTable";
-        String[] columns = {"FirstName", "LastName", "SSN"};
-        String[] dataTypes = {"VARCHAR(20)", "VARCHAR(20)", "NUMBER"};
-        String[] values = {"John", "Doe", "519779675"};
-        String[] keys = {"NULL", "NULL", "PRIMARY KEY"};
+        oracleSQL.createTable(majorTable);
+        oracleSQL.createTable(studentTable);
 
-        oracleSQL.dropTable(table);
-        oracleSQL.createTable(table, columns, dataTypes, keys, null);
-        oracleSQL.insert(table, values);
+        oracleSQL.insert(studentTable, new String[] {"Test"});
+        oracleSQL.select(studentTable, new String[] {"SSN"}, "SSN", "123456789");
 
-        String foreignTable = "ForeignTable";
-        String[] foreignColumns = {"SSN", "ClassroomId"};
-        String[] foreignDataTypes = {"NUMBER", "NUMBER"};
-        String[] foreignKeys = {"Primary Key", "Foreign Key"};
-        String[] foreignValues = {"519779675", "1"};
-        String[] foreignReferences = {table, classTable};
+        oracleSQL.delete(studentTable, new String[] {"SSN", "fName"}, new String[] {"123456789", "Anna"});
 
-        oracleSQL.dropTable(foreignTable);
-        oracleSQL.createTable(foreignTable, foreignColumns, foreignDataTypes, foreignKeys, foreignReferences);
-        oracleSQL.insert(foreignTable, foreignValues);
+        oracleSQL.update(studentTable, new String[] {"SSN", "fName"}, new String[] {"987654321", "Anna"}, "SSN", "123456789");
 
-        oracleSQL.selectIn(foreignTable, "*", "SSN", "519779675");
-
-        String selectStatement = oracleSQL.select(foreignTable, "ClassroomId", "SSN", "519779675");
-        oracleSQL.selectSubquery(classTable, "*", "ClassroomId", selectStatement);
-        oracleSQL.deleteSubquery(classTable, "ClassroomId", selectStatement);
-
-        oracleSQL.delete(foreignTable, new String[]{"SSN", "ClassroomId"}, new String[] {"519779675", "1"});
-
-        values = new String[]{"Johnny", "Doey", "519779672"};
-        oracleSQL.update(table, columns, values, "SSN", "519779675");
-
-        values = new String[]{"John", "Dee", "519779672"};
-        selectStatement = oracleSQL.select(foreignTable, "SSN", "ClassroomId", "1");
-        oracleSQL.updateSubquery(table, columns, values, "SSN", selectStatement);
+        oracleSQL.dropTable(studentTable);
+        oracleSQL.dropTable(majorTable);
 
         oracleSQL.printStatements();
+//        oracleSQL.execute();
     }
 
 }
