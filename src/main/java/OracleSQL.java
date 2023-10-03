@@ -203,7 +203,7 @@ public class OracleSQL {
 
         for (String col : columns) {
             int columnIndex = columns.indexOf(col);
-            s.append(col).append(" ").append(dataTypes.get(columnIndex)).append(" ");
+            s.append(col).append(" ").append(dataTypes.get(columnIndex));
 
             List<String> keys = table.getKeys();
             List<Table> references = table.getReferences();
@@ -211,7 +211,7 @@ public class OracleSQL {
                 if (keys.size() > columnIndex && keys.get(columnIndex) != null) {
                     switch (keys.get(columnIndex)) {
                         case "UNIQUE":
-                            s.append(" ").append("CONSTRAINT ")
+                            s.append(" CONSTRAINT")
                                     .append(table.getName()).append("_")
                                     .append(table.getColumns().get(columnIndex)).append("_uk UNIQUE");
                             break;
