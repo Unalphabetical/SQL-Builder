@@ -31,7 +31,8 @@ public class Main {
         mySQL.createTable(majorTable);
 
         mySQL.insert(studentTable, new String[] {"123456789", "Anna", "Tran"});
-        mySQL.select(studentTable, new String[] {"*"}, "SSN", "123456789");
+        mySQL.insert(studentTable, new String[] {"999999999", "Emily", "Tran"});
+        mySQL.select(studentTable);
 
         mySQL.update(studentTable, new String[] {"SSN", "fName"}, new String[] {"987654321", "Kestine"}, "SSN", "123456789");
         mySQL.select(studentTable, new String[] {"*"}, "SSN", "987654321");

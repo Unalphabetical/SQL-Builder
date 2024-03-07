@@ -346,6 +346,19 @@ public class MySQL {
         return s;
     }
 
+    /**
+     * Returns a basic select table statement that allows you to view all columns without any conditions
+     *
+     * @param table A table
+     *
+     * @return A select table statement that can view all columns
+     */
+
+    public String select(Table table) {
+        StringBuilder s = new StringBuilder("SELECT * FROM ").append(table.getName()).append(";");
+        statements.add(s.toString());
+        return s.toString();
+    }
 
     /**
      * Returns a SQL delete table statement that allows you to delete the table if the columns matches the values
