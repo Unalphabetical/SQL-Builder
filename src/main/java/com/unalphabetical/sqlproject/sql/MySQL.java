@@ -1,46 +1,52 @@
+package com.unalphabetical.sqlproject.sql;
+
+import com.unalphabetical.sqlproject.Table;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-public class OracleSQL {
+public class MySQL {
 
-    private Connection SQLConnection;
-    private Statement statement;
-    private String host;
-    private String port;
-    private String serviceType;
-    private String username;
-    private String password;
-    private List<String> statements;
-    private List<Table> tables;
+    protected Connection SQLConnection;
+    protected Statement statement;
+    protected String host;
+    protected String port;
+    protected String database;
+    protected String username;
+    protected String password;
+    protected List<String> statements;
+    protected List<Table> tables;
 
-    public OracleSQL() {
+    public MySQL() {
         this.tables = new ArrayList<>();
         this.statements = Collections.synchronizedList(new ArrayList<>());
     }
 
-    public OracleSQL(String host, String port, String serviceType) {
+    public MySQL(String host, String port, String database) {
         this.tables = new ArrayList<>();
         this.statements = Collections.synchronizedList(new ArrayList<>());
         this.host = host;
         this.port = port;
-        this.serviceType = serviceType;
+        this.database = database;
     }
 
-    public OracleSQL(String host, String port, String serviceType, String username, String password) {
+    public MySQL(String host, String port, String database, String username, String password) {
         this.tables = new ArrayList<>();
         this.statements = Collections.synchronizedList(new ArrayList<>());
         this.host = host;
         this.port = port;
-        this.serviceType = serviceType;
+        this.database = database;
         this.username = username;
         this.password = password;
     }
 
     /**
-     * Get the host of the SQL server
+     * Get the host of the server
      *
      * @return The host
      */
@@ -50,7 +56,7 @@ public class OracleSQL {
     }
 
     /**
-     * Get the port of the SQL server
+     * Get the port of the server
      *
      * @return The port
      */
@@ -60,17 +66,17 @@ public class OracleSQL {
     }
 
     /**
-     * Get the service type of the SQL server
+     * Get the service type of the server
      *
      * @return The service type
      */
 
     public String getServiceType() {
-        return serviceType;
+        return database;
     }
 
     /**
-     * Get the username of the SQL server
+     * Get the username of the server
      *
      * @return The username
      */
@@ -80,7 +86,7 @@ public class OracleSQL {
     }
 
     /**
-     * Get the password of the SQL server
+     * Get the password of the server
      *
      * @return The password
      */
@@ -100,7 +106,7 @@ public class OracleSQL {
     }
 
     /**
-     * Get the tables that are going to be in the SQL server
+     * Get the tables that are going to be in the server
      *
      * @return The tables
      */
@@ -110,81 +116,75 @@ public class OracleSQL {
     }
 
     /**
-     * Sets the host of the SQL server
+     * Sets the host of the server
      *
      * @param host String
      */
 
-    public OracleSQL setHost(String host) {
+    public MySQL setHost(String host) {
         this.host = host;
         return this;
     }
 
     /**
-     * Sets the port of the SQL server
+     * Sets the port of the server
      *
      * @param port String
      */
 
-    public OracleSQL setPort(String port) {
+    public MySQL setPort(String port) {
         this.port = port;
         return this;
     }
 
     /**
-     * Sets the service type of the SQL server
+     * Sets the database of the server
      *
-     * @param serviceType String
+     * @param database String
      */
 
-    public OracleSQL setServiceType(String serviceType) {
-        this.serviceType = serviceType;
+    public MySQL setDatabase(String database) {
+        this.database = database;
         return this;
     }
 
     /**
-     * Sets the username of the SQL server
+     * Sets the username of the server
      *
      * @param username String
      */
 
-    public OracleSQL setUsername(String username) {
+    public MySQL setUsername(String username) {
         this.username = username;
         return this;
     }
 
     /**
-     * Sets the password of the SQL server
+     * Sets the password of the server
      *
      * @param password String
      */
 
-    public OracleSQL setPassword(String password) {
+    public MySQL setPassword(String password) {
         this.password = password;
         return this;
     }
 
-    /**
-     * Makes a connection towards the SQL server
-     * and returns the current class to allow building
-     *
-     * @return OracleSQL
-     */
-
-    public OracleSQL estalishConnection() {
+    public MySQL establishConnection() {
         try {
-            DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
-            this.SQLConnection = DriverManager.getConnection(
-                    "jdbc:oracle:thin:@" + host + ":" + port + ":" + serviceType, username, password);
+            this.SQLConnection = DriverManager.getConnection("jdbc:mysql://" + host + ":" + port +"/" + database, username, password);
             this.statement = SQLConnection.createStatement();
-        } catch (SQLException s) {
-            throw new RuntimeException(s);
+        } catch (SQLException ex) {
+            // handle any errors
+            System.out.println("SQLException: " + ex.getMessage());
+            System.out.println("SQLState: " + ex.getSQLState());
+            System.out.println("VendorError: " + ex.getErrorCode());
         }
         return this;
     }
 
     /**
-     * Returns a SQL table statement
+     * Returns a table statement
      *
      * @param table A String
      *
@@ -206,7 +206,7 @@ public class OracleSQL {
             s.append(col).append(" ").append(dataTypes.get(columnIndex));
 
             List<String> keys = table.getKeys();
-            List<Table> references = table.getReferences();
+            List<Table> references = table.getTableReferences();
             if ((keys != null) && (keys.size() > 0)) {
                 if (keys.size() > columnIndex && keys.get(columnIndex) != null) {
                     switch (keys.get(columnIndex)) {
@@ -222,12 +222,11 @@ public class OracleSQL {
                                     .append(references.get(columnIndex).getName()).append(")");
                             break;
                         case "FOREIGN KEY":
-                            if ((references != null) && (references.size() > 0)) s.append(" ").append("CONSTRAINT ")
-                                    .append(table.getName()).append("_")
-                                    .append(table.getColumns().get(columnIndex)).append("_")
-                                    .append(table.getReferences().get(columnIndex).getName()).append("_fk REFERENCES ")
-                                    .append(table.getReferences().get(columnIndex).getName())
-                                    .append(" ON DELETE CASCADE");
+                            s.append(", FOREIGN KEY (").append(col).append(")")
+                                    .append(" REFERENCES ")
+                                    .append(table.getTableReferences().get(columnIndex).getName())
+                                    .append(" (").append(table.getColumnReferences().get(columnIndex))
+                                    .append(") ON DELETE CASCADE");
                             break;
                     }
                 }
@@ -243,7 +242,7 @@ public class OracleSQL {
     }
 
     /**
-     * Returns a basic SQL drop table statement
+     * Returns a basic drop table statement
      *
      * @param table A table
      *
@@ -258,7 +257,7 @@ public class OracleSQL {
     }
 
     /**
-     * Returns a basic SQL insert table statement
+     * Returns a basic insert table statement
      *
      * @param table A table
      * @param values An array of values that will be inserted
@@ -292,7 +291,7 @@ public class OracleSQL {
     }
 
     /**
-     * Returns a basic SQL select table statement that allows you to view many columns with equal
+     * Returns a basic select table statement that allows you to view many columns with equal
      *
      * @param table A table
      * @param displayColumns An array of columns that you want to see
@@ -330,7 +329,7 @@ public class OracleSQL {
     }
 
     /**
-     * Returns a basic SQL select table statement that allows you to view a column with equal
+     * Returns a basic select table statement that allows you to view a column with equal
      *
      * @param table A table
      * @param displayColumn A column that you want to see
@@ -346,6 +345,7 @@ public class OracleSQL {
         statements.add(s);
         return s;
     }
+
 
     /**
      * Returns a SQL delete table statement that allows you to delete the table if the columns matches the values
@@ -455,24 +455,6 @@ public class OracleSQL {
     }
 
     /**
-     * Returns a SQL delete subquery table statement that allows you to delete the table if the column is IN the value of the select table statement
-     *
-     * @param table A table
-     * @param column A column that will be compared with the value
-     * @param selectStatement A select table statement that will be compared with equal
-     *
-     * @return A delete table subquery statement that will delete the table if the column equals the value of the select table statement
-     */
-
-    public String deleteInSubquery(Table table, String column, String selectStatement){
-        statements.remove(selectStatement);
-        String s = "DELETE FROM " + table.getName() + " WHERE " + column + " IN " + "(" + selectStatement.replace(";", "") + ";";
-
-        statements.add(s);
-        return s;
-    }
-
-    /**
      * Rearranges the statement so that foreign tables are dropped before reference tables
      */
 
@@ -480,7 +462,7 @@ public class OracleSQL {
         List<String> newlyArrangedExecutableStatements = new ArrayList<>();
 
         for (Table table : tables) {
-            List<Table> references = table.getReferences();
+            List<Table> references = table.getTableReferences();
 
             for (int i = 0; i < statements.size(); i++) {
                 String statement = statements.get(i);
@@ -509,25 +491,25 @@ public class OracleSQL {
     }
 
     /**
-     * Rearranges and then debugs the statements by printing them out
+     * Debugs the statements by printing them out
      */
-    public void printStatements(){
-        this.rearrangeStatements();
 
+    public void printStatements(){
         for (String statements : statements){
             System.out.println(statements);
         }
     }
 
     /**
-     * This executes the list of statements
+     * This rearranges the statements and executes them
      */
 
-    public void execute(){
+    public void execute() {
         this.rearrangeStatements();
+
         try {
             for (String s : this.statements) {
-                this.statement.execute(s.replace(";", ""));
+                this.statement.execute(s);
             }
             this.statements = new ArrayList<>();
         } catch (SQLException e) {

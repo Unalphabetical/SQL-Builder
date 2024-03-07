@@ -1,3 +1,5 @@
+package com.unalphabetical.sqlproject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +13,9 @@ public class Table {
 
     private List<String> keys;
 
-    private List<Table> references;
+    private final List<Table> tableReferences;
+
+    private final List<String> columnReferences;
 
     public Table(String name){
         this.name = name;
@@ -19,7 +23,8 @@ public class Table {
         this.dataTypes = new ArrayList<>();
 
         this.keys = new ArrayList<>();
-        this.references = new ArrayList<>();
+        this.tableReferences = new ArrayList<>();
+        this.columnReferences = new ArrayList<>();
     }
 
     public Table setName(String name) {
@@ -53,7 +58,12 @@ public class Table {
     }
 
     public Table tableReference(Table reference){
-        this.references.add(reference);
+        this.tableReferences.add(reference);
+        return this;
+    }
+
+    public Table columnReference(String reference){
+        this.columnReferences.add(reference);
         return this;
     }
 
@@ -73,8 +83,12 @@ public class Table {
         return keys;
     }
 
-    public List<Table> getReferences() {
-        return references;
+    public List<Table> getTableReferences() {
+        return tableReferences;
+    }
+
+    public List<String> getColumnReferences() {
+        return columnReferences;
     }
 
 }
