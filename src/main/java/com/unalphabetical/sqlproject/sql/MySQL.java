@@ -6,9 +6,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class MySQL {
 
@@ -472,31 +471,50 @@ public class MySQL {
      */
 
     public void rearrangeStatements() {
+
+        Map<String, Integer> referencedAmount = new HashMap<>();
         List<String> newlyArrangedExecutableStatements = new ArrayList<>();
 
         for (Table table : tables) {
+            referencedAmount.put(table.getName(), 0);
             List<Table> references = table.getTableReferences();
 
-            for (int i = 0; i < statements.size(); i++) {
-                String statement = statements.get(i);
-                if (statement.startsWith("DROP TABLE " + table.getName())) {
+            for (Table reference : references) {
+                if (reference == null) continue;
+
+                for (Table references2 : reference.getTableReferences()) {
+                    if (references2 == null) continue;
+                    if (table.getName().equals(references2.getName())) continue;
+
+                    int referencedCount = referencedAmount.getOrDefault(references2.getName(), 0);
+                    referencedCount++;
+                    referencedAmount.put(references2.getName(), referencedCount);
+                }
+                if (table.getName().equals(reference.getName())) continue;
+
+                int referencedCount = referencedAmount.getOrDefault(reference.getName(), 0);
+                referencedCount++;
+                referencedAmount.put(reference.getName(), referencedCount);
+            }
+        }
+
+        referencedAmount = referencedAmount
+                .entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2,
+                        LinkedHashMap::new));
+
+        for (Map.Entry<String, Integer> s : referencedAmount.entrySet()) {
+            for (String statement : statements) {
+                if (statement.startsWith("DROP TABLE " + s.getKey())) {
                     newlyArrangedExecutableStatements.add(statement);
-                    statements.remove(statement);
                 }
             }
+        }
 
-            if (references != null) {
-                for (Table reference : references) {
-                    for (int i = 0; i < newlyArrangedExecutableStatements.size(); i++) {
-                        String statement = newlyArrangedExecutableStatements.get(i);
-                        if (statement.startsWith("DROP TABLE " + reference.getName())) {
-                            newlyArrangedExecutableStatements.remove(statement);
-                            newlyArrangedExecutableStatements.add(statement);
-                        }
-                    }
-                }
-
-            }
+        for (String statement : newlyArrangedExecutableStatements) {
+            statements.remove(statement);
         }
 
         newlyArrangedExecutableStatements.addAll(statements);
@@ -508,6 +526,8 @@ public class MySQL {
      */
 
     public void printStatements(){
+        this.rearrangeStatements();
+
         for (String statements : statements){
             System.out.println(statements);
         }
