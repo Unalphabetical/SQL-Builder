@@ -206,7 +206,7 @@ public class MySQL {
 
             List<String> keys = table.getKeys();
             List<Table> references = table.getTableReferences();
-            if ((keys != null) && (keys.size() > 0)) {
+            if ((keys != null) && (!keys.isEmpty())) {
                 if (keys.size() > columnIndex && keys.get(columnIndex) != null) {
                     switch (keys.get(columnIndex)) {
                         case "UNIQUE":
@@ -216,12 +216,9 @@ public class MySQL {
                             break;
                         case "PRIMARY KEY":
                             s.append(" PRIMARY KEY");
-                            if ((references != null) && (references.size() > 0)) s.append(" REFERENCES ")
-                                    .append(references.get(columnIndex)).append("(")
-                                    .append(references.get(columnIndex).getName()).append(")");
                             break;
                         case "FOREIGN KEY":
-                            s.append(", FOREIGN KEY (").append(col).append(")")
+                            if ((references != null) && (!references.isEmpty())) s.append(", FOREIGN KEY (").append(col).append(")")
                                     .append(" REFERENCES ")
                                     .append(table.getTableReferences().get(columnIndex).getName())
                                     .append(" (").append(table.getColumnReferences().get(columnIndex))

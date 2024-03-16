@@ -69,7 +69,7 @@ public class OracleSQL extends MySQL {
 
             List<String> keys = table.getKeys();
             List<Table> references = table.getTableReferences();
-            if ((keys != null) && (keys.size() > 0)) {
+            if ((keys != null) && (!keys.isEmpty())) {
                 if (keys.size() > columnIndex && keys.get(columnIndex) != null) {
                     switch (keys.get(columnIndex)) {
                         case "UNIQUE":
@@ -79,12 +79,9 @@ public class OracleSQL extends MySQL {
                             break;
                         case "PRIMARY KEY":
                             s.append(" PRIMARY KEY");
-                            if ((references != null) && (references.size() > 0)) s.append(" REFERENCES ")
-                                    .append(references.get(columnIndex)).append("(")
-                                    .append(references.get(columnIndex).getName()).append(")");
                             break;
                         case "FOREIGN KEY":
-                            if ((references != null) && (references.size() > 0)) s.append(" ").append("CONSTRAINT ")
+                            if ((references != null) && (!references.isEmpty())) s.append(" ").append("CONSTRAINT ")
                                     .append(table.getName()).append("_")
                                     .append(table.getColumns().get(columnIndex)).append("_")
                                     .append(table.getTableReferences().get(columnIndex).getName()).append("_fk REFERENCES ")
