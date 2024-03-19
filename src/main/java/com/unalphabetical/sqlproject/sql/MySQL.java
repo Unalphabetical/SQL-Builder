@@ -228,7 +228,8 @@ public class MySQL {
                                         .append(" REFERENCES ")
                                         .append(table.getTableReferences().get(columnIndex).getName())
                                         .append(" (").append(table.getColumnReferences().get(columnIndex))
-                                        .append(") ON DELETE CASCADE");
+                                        .append(")");
+                                if (!s.toString().contains("ON DELETE CASCADE")) s.append(" ON DELETE CASCADE");
                                 int amount = referencedAmount.getOrDefault(table.getTableReferences().get(columnIndex).getName(), 0);
                                 referencedAmount.put(table.getTableReferences().get(columnIndex).getName(), amount + 1);
                             }
@@ -479,14 +480,15 @@ public class MySQL {
      */
 
     public boolean isSorted() {
-        boolean sorted = false;
+        List<Integer> values = new ArrayList<>(referencedAmount.values());
 
-        List<String> keys = new ArrayList<>(referencedAmount.keySet());
-        for (int i = 0; i < keys.size() - 1; i++) {
-            sorted = referencedAmount.get(keys.get(i)) <= referencedAmount.get(keys.get(i + 1));
+        for (int i = 0; i < values.size() - 1; i++) {
+            if (values.get(i).compareTo(values.get(i + 1)) > 0) {
+                return false;
+            }
         }
 
-        return sorted;
+        return true;
     }
 
     /**

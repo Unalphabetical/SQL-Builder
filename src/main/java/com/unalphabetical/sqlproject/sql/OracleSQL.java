@@ -89,6 +89,7 @@ public class OracleSQL extends MySQL {
                                         .append(table.getTableReferences().get(columnIndex).getName()).append("_fk REFERENCES ")
                                         .append(table.getTableReferences().get(columnIndex).getName())
                                         .append(" ON DELETE CASCADE");
+                                if (!s.toString().contains("ON DELETE CASCADE")) s.append(" ON DELETE CASCADE");
                                 int amount = referencedAmount.getOrDefault(table.getTableReferences().get(columnIndex).getName(), 0);
                                 referencedAmount.put(table.getTableReferences().get(columnIndex).getName(), amount + 1);
                             }
