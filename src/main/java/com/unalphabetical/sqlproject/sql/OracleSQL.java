@@ -62,6 +62,7 @@ public class OracleSQL extends MySQL {
         List<String> dataTypes = table.getDataTypes();
 
         int index = 0;
+        referencedAmount.put(table.getName(), 0);
 
         for (String col : columns) {
             int columnIndex = columns.indexOf(col);
@@ -81,12 +82,16 @@ public class OracleSQL extends MySQL {
                             s.append(" PRIMARY KEY");
                             break;
                         case "FOREIGN KEY":
-                            if ((references != null) && (!references.isEmpty())) s.append(" ").append("CONSTRAINT ")
-                                    .append(table.getName()).append("_")
-                                    .append(table.getColumns().get(columnIndex)).append("_")
-                                    .append(table.getTableReferences().get(columnIndex).getName()).append("_fk REFERENCES ")
-                                    .append(table.getTableReferences().get(columnIndex).getName())
-                                    .append(" ON DELETE CASCADE");
+                            if ((references != null) && (!references.isEmpty())) {
+                                s.append(" ").append("CONSTRAINT ")
+                                        .append(table.getName()).append("_")
+                                        .append(table.getColumns().get(columnIndex)).append("_")
+                                        .append(table.getTableReferences().get(columnIndex).getName()).append("_fk REFERENCES ")
+                                        .append(table.getTableReferences().get(columnIndex).getName())
+                                        .append(" ON DELETE CASCADE");
+                                int amount = referencedAmount.getOrDefault(table.getTableReferences().get(columnIndex).getName(), 0);
+                                referencedAmount.put(table.getTableReferences().get(columnIndex).getName(), amount + 1);
+                            }
                             break;
                     }
                 }

@@ -20,15 +20,18 @@ public class MySQL {
     protected String password;
     protected List<String> statements;
     protected List<Table> tables;
+    protected Map<String, Integer> referencedAmount;
 
     public MySQL() {
         this.tables = new ArrayList<>();
         this.statements = Collections.synchronizedList(new ArrayList<>());
+        this.referencedAmount = new HashMap<>();
     }
 
     public MySQL(String host, String port, String database) {
         this.tables = new ArrayList<>();
         this.statements = Collections.synchronizedList(new ArrayList<>());
+        this.referencedAmount = new HashMap<>();
         this.host = host;
         this.port = port;
         this.database = database;
@@ -37,6 +40,7 @@ public class MySQL {
     public MySQL(String host, String port, String database, String username, String password) {
         this.tables = new ArrayList<>();
         this.statements = Collections.synchronizedList(new ArrayList<>());
+        this.referencedAmount = new HashMap<>();
         this.host = host;
         this.port = port;
         this.database = database;
@@ -199,6 +203,7 @@ public class MySQL {
         List<String> dataTypes = table.getDataTypes();
 
         int index = 0;
+        referencedAmount.put(table.getName(), 0);
 
         for (String col : columns) {
             int columnIndex = columns.indexOf(col);
@@ -218,11 +223,15 @@ public class MySQL {
                             s.append(" PRIMARY KEY");
                             break;
                         case "FOREIGN KEY":
-                            if ((references != null) && (!references.isEmpty())) s.append(", FOREIGN KEY (").append(col).append(")")
-                                    .append(" REFERENCES ")
-                                    .append(table.getTableReferences().get(columnIndex).getName())
-                                    .append(" (").append(table.getColumnReferences().get(columnIndex))
-                                    .append(") ON DELETE CASCADE");
+                            if ((references != null) && (!references.isEmpty())) {
+                                s.append(", FOREIGN KEY (").append(col).append(")")
+                                        .append(" REFERENCES ")
+                                        .append(table.getTableReferences().get(columnIndex).getName())
+                                        .append(" (").append(table.getColumnReferences().get(columnIndex))
+                                        .append(") ON DELETE CASCADE");
+                                int amount = referencedAmount.getOrDefault(table.getTableReferences().get(columnIndex).getName(), 0);
+                                referencedAmount.put(table.getTableReferences().get(columnIndex).getName(), amount + 1);
+                            }
                             break;
                     }
                 }
@@ -464,38 +473,43 @@ public class MySQL {
     }
 
     /**
+     * Sorts the statements so that foreign tables are dropped before reference tables
+     *
+     * @return A boolean
+     */
+
+    public boolean isSorted() {
+        boolean sorted = false;
+
+        List<String> keys = new ArrayList<>(referencedAmount.keySet());
+        for (int i = 0; i < keys.size() - 1; i++) {
+            sorted = referencedAmount.get(keys.get(i)) <= referencedAmount.get(keys.get(i + 1));
+        }
+
+        return sorted;
+    }
+
+    /**
      * Rearranges the statement so that foreign tables are dropped before reference tables
+     * The method sums up the reference amount so the foreign tables are correctly dropped before the reference tables
+     * The method also sorts the statements only when they are not sorted to improve performance
      */
 
     public void rearrangeStatements() {
 
-        Map<String, Integer> referencedAmount = new HashMap<>();
         List<String> newlyArrangedExecutableStatements = new ArrayList<>();
 
         for (Table table : tables) {
-            referencedAmount.put(table.getName(), 0);
-            List<Table> references = table.getTableReferences();
-
-            for (Table reference : references) {
-                if (reference == null) continue;
-
-                for (Table references2 : reference.getTableReferences()) {
-                    if (references2 == null) continue;
-                    if (table.getName().equals(references2.getName())) continue;
-
-                    int referencedCount = referencedAmount.getOrDefault(references2.getName(), 0);
-                    referencedCount++;
-                    referencedAmount.put(references2.getName(), referencedCount);
+            for (Table reference : table.getTableReferences()) {
+                if (reference != null) {
+                    int referenceAmount = referencedAmount.getOrDefault(reference.getName(), 0);
+                    int tableAmount = referencedAmount.getOrDefault(table.getName(), 0);
+                    referencedAmount.put(reference.getName(), referenceAmount + tableAmount);
                 }
-                if (table.getName().equals(reference.getName())) continue;
-
-                int referencedCount = referencedAmount.getOrDefault(reference.getName(), 0);
-                referencedCount++;
-                referencedAmount.put(reference.getName(), referencedCount);
             }
         }
 
-        referencedAmount = referencedAmount
+        if (!isSorted()) referencedAmount = referencedAmount
                 .entrySet()
                 .stream()
                 .sorted(Map.Entry.comparingByValue())
@@ -503,15 +517,14 @@ public class MySQL {
                         LinkedHashMap::new));
 
         for (Map.Entry<String, Integer> s : referencedAmount.entrySet()) {
-            for (String statement : statements) {
+            Iterator<String> iterator = statements.iterator();
+            while (iterator.hasNext()) {
+                String statement = iterator.next();
                 if (statement.startsWith("DROP TABLE " + s.getKey())) {
                     newlyArrangedExecutableStatements.add(statement);
+                    iterator.remove();
                 }
             }
-        }
-
-        for (String statement : newlyArrangedExecutableStatements) {
-            statements.remove(statement);
         }
 
         newlyArrangedExecutableStatements.addAll(statements);
